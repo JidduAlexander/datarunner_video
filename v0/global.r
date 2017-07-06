@@ -1,0 +1,71 @@
+library(shiny)
+library(stringr)
+library(tidyverse)
+library(shinyjs)
+
+# Upload video 
+# Select frames of two seconds of video
+# For each frame say air/ground, before after hip
+
+# Javascript code for video 
+jsCode1 <- "shinyjs.speed0 = function(x){
+  var myVid=document.getElementById('v0');
+  myVid.playbackRate = x;
+  $('#pbrate').html(x);
+}"
+jsCode2 <- "shinyjs.vid0 = function(value){document.getElementById('v0').currentTime = value;}"
+
+# Upload limits
+shiny_file_size <- 100 # in MB
+video_footage <- 8 # In GB, much heavier in storage than video but frames can be specified
+
+
+# Remove the temporary video file from previous session, actually remove files that start with "temp"
+fls <- list.files("www/temp")
+if(length(fls[str_sub(fls, 1, 4) == "temp"]) != 0) {
+  fls <- paste0("www/temp/", fls[str_sub(fls, 1, 4) == "temp"])
+  file.remove(fls)
+}
+
+runner_experiences <- list(
+  "Just starting" = 0,
+  "1 Month"       = 1,
+  "3 Months"      = 3,
+  "6 Months"      = 6,
+  "9 Months"      = 9,
+  "1 Year"        = 12,
+  "2 Years"       = 24,
+  "3 Years"       = 36,
+  "5+ Years"      = 60,
+  "10+ Years"     = 120,
+  "15+ Years"     = 180,
+  "25+ Years"     = 300
+)
+
+runner_aims <-  c("I enjoy running",
+                  "Staying healthy",
+                  "Competitive (personal/amature)",
+                  "Competitive (professional)")
+
+runner_types_of_training <- c("Just leave my house and jog",
+                              "Interval Trainging (sprints with breaks)",
+                              "Treadmill")
+
+run_distances <- c("Up to 200m", "A 400m sprint", "About 1km", "3 to 5km", "5 to 12km", "12 to 30km", "Marathon distance", "50km+")
+
+types_of_injuries <- c("None", "Ankle", "Knee")
+
+influences_of_injuries <- c("None", 
+                            "Pain when running, but continue running",
+                            "Stop (cut short) each run when I fell pain",
+                            "Stop running for some time")
+
+# Reusable chunks
+
+# fluidRow(
+#   column(width = 4, p(id = "input_text", "")),
+#   column(width = 8)
+# ),
+
+
+
