@@ -2,6 +2,20 @@ library(shiny)
 library(stringr)
 library(tidyverse)
 library(shinyjs)
+library(sodium)
+
+source("R/helpers.R")
+
+# Read databases
+
+db_user         <- readRDS("input/db/db_user.Rds")
+db_frame        <- readRDS("input/db/db_frame.Rds")
+db_frame_upload <- readRDS("input/db/db_frame_upload.Rds")
+
+# Get the modification times
+db_user_mtime          <- file.mtime("input/db/db_user.Rds")
+db_frame_mtime         <- file.mtime("input/db/db_frame.Rds")
+db_frame_upload_mtime  <- file.mtime("input/db/db_frame_upload.Rds")
 
 # Upload video 
 # Select frames of two seconds of video

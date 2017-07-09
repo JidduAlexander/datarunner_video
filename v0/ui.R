@@ -14,8 +14,21 @@ shinyUI(fluidPage(
          ')
   )),
   
-  # Application title
-  titlePanel("Data Runner"),
+  # LOGIN
+  fluidRow(
+    column(width = 1),
+    column(width = 3, p(""), img(src="datarunner.png", align = "center", width = "100%")),
+    column(width = 1),
+    # column(width = 3, h2("DATA RUNNER")),
+    column(width = 7, uiOutput("login_ui")
+    )
+  ),
+  hr(),
+  
+  fluidRow(
+    # sidebarpanel
+    column(width = 2)
+  ),
   
   # 1. General -----
   fluidRow(
@@ -180,7 +193,7 @@ shinyUI(fluidPage(
     ),
     column(width = 2)
   ),
-  hr(),
+  # INSPECT VIDEO -----
   fluidRow(
     column(width = 2),
     column(width = 8, 
@@ -190,6 +203,7 @@ shinyUI(fluidPage(
            uiOutput("upload_show_video")),
     column(width = 2)      
   ),
+  # PICK START AND END FRAME -----
   fluidRow(
     column(width = 2),
     column(width = 8,
@@ -198,21 +212,126 @@ shinyUI(fluidPage(
              column(width = 4, 
                     p(id = "input_text", 
                       "Start frame (Look for the first frame where your back foot has lift of the ground)")),
-             column(width = 8, numericInput("video_frame_start", NULL, value = 0, min = 0))
+             column(width = 8, uiOutput("video_frame_start_ui"))
            ),
            fluidRow(
              column(width = 4, 
                     p(id = "input_text", 
                       "End frame (Look for the last frame where your back foot is till on the ground)")),
-             column(width = 8, numericInput("video_frame_end", NULL, value = 1, min = 0))
+             column(width = 8, uiOutput("video_frame_end_ui"))
+           ),
+           fluidRow(
+             column(width = 4),
+             column(width = 8, 
+                    withBusyIndicatorUI(actionButton("video_frame_button", "Extract frame from video >")))
            ),
            p("The example underneath is a split of two frames. The left side shows the start frame 
              (frame 28) and the left side shows the end frame (frame 61)."),
-           img(src="feetcontact.png", align = "right"),
+           fluidRow(column(width = 1),
+                    column(width = 10, img(src="feetcontact.png", align = "center")),
+                    column(width = 1)
+           ),
            p("")
     ),
     column(width = 2)
-  )
-  # 5. FRAMES -----
+  ),
+  # 5. ANALYSE FRAMES -----
+  fluidRow(
+    column(width = 2),
+    column(width = 8,
+           h4("4. Analyse, frame by frame"),
+           p("For each frame you have to answer a few questions.")
+    ),
+    column(width = 2)      
+    ),
+  fluidRow(
+    column(width = 1),
+    column(width = 10, uiOutput("frame_analysis_img")),
+    column(width = 1)
+  ),
+  p(""),
+  fluidRow(
+    column(width = 1),
+    column(width = 4,
+           h4("LEFT FOOT", align = "center"),
+           fluidRow(
+             column(width = 8, 
+                    p(id = "input_text", "In the air or touching the ground")),
+             column(width = 4, 
+                    radioButtons("left_air_ground", NULL, 
+                                 choices = c("Air", "Ground"),
+                                 selected = "Air")
+             )
+           ),
+           conditionalPanel(
+             "input.left_air_ground == 'Ground'",
+             fluidRow(
+               column(width = 8, 
+                      p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
+               column(width = 4, radioButtons("left_ground_pos", NULL, 
+                                              choices = c("In front", "Behind"),
+                                              selected = "In front")
+               )
+             ),
+             fluidRow(
+               column(width = 8, p(id = "input_text", "Is the foot flat on the floor or landing?")),
+               column(width = 4, radioButtons("left_ground_land", NULL, 
+                                              choices = c("Flat", "Landing", "Taking off"),
+                                              selected = "Flat"))
+             ),
+             conditionalPanel(
+               "input.left_ground_land == 'Landing'",
+               fluidRow(
+                 column(width = 8, p(id = "input_text", "How is your foot landing?")),
+                 column(width = 4, radioButtons("left_ground_land_detail", NULL, 
+                                                choices = c("Flat", "Heel land", "Toe land"),
+                                                selected = "Flat"))
+               )
+             )
+           )
+    ),
+    column(width = 4,
+           h4("RIGHT FOOT", align = "center"),
+           fluidRow(
+             column(width = 8, 
+                    p(id = "input_text", "In the air or touching the ground")),
+             column(width = 4, 
+                    radioButtons("right_air_ground", NULL, 
+                                 choices = c("Air", "Ground"),
+                                 selected = "Air")
+             )
+           ),
+           conditionalPanel(
+             "input.right_air_ground == 'Ground'",
+             fluidRow(
+               column(width = 8, 
+                      p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
+               column(width = 4, radioButtons("right_ground_pos", NULL, 
+                                              choices = c("In front", "Behind"),
+                                              selected = "In front")
+               )
+             ),
+             fluidRow(
+               column(width = 8, p(id = "input_text", "Is the foot flat on the floor or landing?")),
+               column(width = 4, radioButtons("right_ground_land", NULL, 
+                                              choices = c("Flat", "Landing"),
+                                              selected = "Flat"))
+             ),
+             conditionalPanel(
+               "input.right_ground_land == 'Landing'",
+               fluidRow(
+                 column(width = 8, p(id = "input_text", "How is your foot landing?")),
+                 column(width = 4, radioButtons("right_ground_land_detail", NULL, 
+                                                choices = c("Flat", "Heel land", "Toe land"),
+                                                selected = "Flat"))
+               )
+             )
+           ),
+           div(style = "float:right;", uiOutput("next_frame_ui"))
+    ),
+    column(width = 1)
+  ),
+  # Footer
+  div(style = "width:100%; height:200px;")
 ))
   
