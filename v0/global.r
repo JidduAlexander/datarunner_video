@@ -1,10 +1,18 @@
 library(shiny)
+library(shinydashboard)
 library(stringr)
 library(tidyverse)
 library(shinyjs)
 library(sodium)
 
 source("R/helpers.R")
+
+
+# IDEAS
+
+# I just analysed my running facebook share button: Create funny compilation for sharing. 
+# Give nicknames to running styles, like Micheal Air Jordan.
+
 
 # Read databases
 

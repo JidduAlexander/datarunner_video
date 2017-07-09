@@ -32,39 +32,36 @@ shinyServer(function(input, output, session) {
   # Message when logged in
   output$welcome_msg <- renderText({
     if(!is.null(rv_user$user_name)) {
-      paste("Hello,", rv_user$user_name)
+      paste("You are logged in as ", rv_user$user_name)
     } else { NULL }
   })
   
-  # UI for login in or out
+  # UI for login in 
   output$login_ui <- renderUI({
     if(is.null(rv_user$user_id)) {
       list(
-        fluidRow( 
-          column(width = 3, h6("User name")),
-          column(width = 3, h6("Password")),
-          column(width = 6)
-        ),
-        fluidRow(
-          column(width = 3, textInput("user_name", NULL)),
-          column(width = 3, textInput("user_pw", NULL)),
-          column(width = 2, withBusyIndicatorUI(actionButton("user_login", "Login",
-                                                             class = "btn-primary"))),
-          column(width = 1),
-          column(width = 3, withBusyIndicatorUI(actionButton("create_account", "Create Account",
-                                                             class = "btn-primary")))
-        )
+        hr(),
+        textInput("user_name", "User name"),
+        textInput("user_pw", "Password"),
+        withBusyIndicatorUI(actionButton("user_login", "Login",
+                                         class = "btn-primary")),
+        div(style = "padding:10px;", p("or")),
+        withBusyIndicatorUI(actionButton("create_account", "Create Account",
+                                         class = "btn-primary"))
       )
+    } else { NULL }
+  })
+  
+  # UI for login out
+  output$logout_ui <- renderUI({
+    if(is.null(rv_user$user_id)) {
+      NULL
     } else {
       list(
-        p(""),
-        fluidRow(
-          column(width = 3),
-          column(width = 5, div(style = "float:right;", textOutput("welcome_msg"))),
-          column(width = 1),
-          column(width = 3, withBusyIndicatorUI(actionButton("user_logout", "Logout",
-                                                             class = "btn-primary")))
-        )
+        hr(),
+        div(style = "padding:10px;", textOutput("welcome_msg")),
+        withBusyIndicatorUI(actionButton("user_logout", "Logout",
+                                         class = "btn-primary"))
       )
     }
   })
@@ -119,6 +116,27 @@ shinyServer(function(input, output, session) {
       Sys.sleep(0.5)
     })
   })
+  
+  # If create_account button is clicked go to create account tab
+  observeEvent(input$create_account, {
+    updateTabItems(session, "tab_main", "create_account")
+  })
+  
+  # MENU -----
+  
+  output$menu_profile <- renderMenu({
+    if(!is.null(rv_user$user_id)) {
+      sidebarMenu(
+        id = "tab_profile", 
+        menuItem("Profile",
+                 menuSubItem("General", tabName = "General"),
+                 menuSubItem("Runs", tabName = "Runs"),
+                 menuSubItem("Video Analysis", tabName = "video_analysis"))
+      )
+    } else { NULL }
+  })
+  
+  # VIDEO STUFF -----
   
   # Reactive video variables
   rv_vid <- reactiveValues(
