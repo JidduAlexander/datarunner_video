@@ -6,6 +6,7 @@ library(shinyjs)
 library(sodium)
 
 source("R/helpers.R")
+source("R/functions.R")
 
 
 # IDEAS
@@ -38,9 +39,10 @@ jsCode1 <- "shinyjs.speed0 = function(x){
 jsCode2 <- "shinyjs.vid0 = function(value){document.getElementById('v0').currentTime = value;}"
 
 # Upload limits
-shiny_file_size <- 100 # in MB
+shiny_file_size <- 300 # in MB
 video_footage <- 8 # In GB, much heavier in storage than video but frames can be specified
 
+options(shiny.maxRequestSize = shiny_file_size * 1024^2)
 
 # Remove the temporary video file from previous session, actually remove files that start with "temp"
 fls <- list.files("www/temp")

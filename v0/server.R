@@ -42,11 +42,11 @@ shinyServer(function(input, output, session) {
       list(
         hr(),
         textInput("user_name", "User name"),
-        textInput("user_pw", "Password"),
+        passwordInput("user_pw", "Password"),
         withBusyIndicatorUI(actionButton("user_login", "Login",
                                          class = "btn-primary")),
         div(style = "padding:10px;", p("or")),
-        withBusyIndicatorUI(actionButton("create_account", "Create Account",
+        withBusyIndicatorUI(actionButton("create_account_1", "Create Account",
                                          class = "btn-primary"))
       )
     } else { NULL }
@@ -90,7 +90,7 @@ shinyServer(function(input, output, session) {
           rv_user$user_id   <- user_$user_id
           rv_user$user_name <- user_$name
           
-          Sys.sleep(0.5)
+          updateTabItems(session, "tab_profile", "profile_general")
           
         } else {
           # Reset pw field
@@ -118,20 +118,276 @@ shinyServer(function(input, output, session) {
   })
   
   # If create_account button is clicked go to create account tab
-  observeEvent(input$create_account, {
+  observeEvent(input$create_account_1, {
+    updateTabItems(session, "tab_main", "create_account")
+  })
+  observeEvent(input$create_account_2, {
     updateTabItems(session, "tab_main", "create_account")
   })
   
-  # MENU -----
+  # PAGE - HOME -----
   
+  output$home_ui <- renderUI({
+    ui <-  p("VIDEO: quick steps, large jumps, fly (whitch video), Sprint, backwards, leisure, Hinkelen. 
+             Questions: Does my running style have a speed limit. What's efficient running? 
+             What leads to fewer injuries?
+             Brief explanation of the App.")
+    
+    # Add login/create account if not logged in
+    if(is.null(isolate(rv_user$user_id))) {
+      ui <- c(
+        ui,
+        list(
+          hr(),
+          h3("Let's go!", style = "padding-bottom:20px;"),
+          fluidRow(
+            column(width = 5, p("Login in the side panel")),
+            column(width = 1, p("or")),
+            column(width = 6, withBusyIndicatorUI(actionButton("create_account_2", "Create Account",
+                                                               class = "btn-primary")))
+          )
+        )
+      )
+    }
+    div(
+      style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+      ui
+    )
+  })
+  
+  # PAGE - CREATE ACCOUNT -----
+  
+  # UI flipping through pages
+  output$create_account_ui <- renderUI({
+    ui <- NULL
+    if(!is.null(isolate(rv_user$user_id))) {
+      ui <- p("Please log out first.")
+    } else {
+      ui <- div(
+        style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+        h3("Login details"),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "* User name")),
+          column(width = 8, textInput("create_account_name", NULL, value = ""))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Email")),
+          column(width = 8, textInput("create_account_email", NULL, value = ""))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "* Password")),
+          column(width = 8,  passwordInput("create_account_password1", NULL))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "* Retype Password")),
+          column(width = 8, passwordInput("create_account_password2", NULL))
+        ),
+        p("You are at at the forefront of running analysis curiousity. Your awesomeness 
+            has the fortunate advantage that you can influence the future of this 
+            application. We welcome your feedback and directions and we may approach you 
+            asking for it."),
+        hr(),
+        h3("A little more about you"),
+        p(paste0("Depending on you experience and body you probably have different 
+                 strengths and weaknesses. To take this into the analysis please 
+                 fill out the following form.")),
+        p("GENERAL"),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Age")),
+          column(width = 8, numericInput("runner_age", NULL, 
+                                         min = 1, value = 30, step = 1))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Height in cm")),
+          column(width = 8, numericInput("runner_height", NULL, 
+                                         min = 0, value = 175, step = 1))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Weight in kg")),
+          column(width = 8, numericInput("runner_weight", NULL, 
+                                         min = 0, value = 65, step = 0.5))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Sex")),
+          column(width = 8, selectInput("runner_sex", NULL, 
+                                        choices  = c("Male", "Female", "Other"),
+                                        selected = "Male"))
+        ),
+        p("INJURIES"),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Types of injuries")),
+          column(width = 8, selectizeInput("type_of_injuries", NULL, 
+                                           choices  = types_of_injuries,
+                                           multiple = TRUE))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Influences on running")),
+          column(width = 8, selectizeInput("influence_of_injuries", NULL, 
+                                           choices  = influences_of_injuries,
+                                           multiple = TRUE))
+        ),
+        p("RUNNING"),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Aim")),
+          column(width = 8, selectInput("runner_aim", NULL,
+                                        choices  = runner_aims, 
+                                        selected = runner_aims[1],
+                                        multiple = TRUE))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Experience")),
+          column(width = 8, selectInput("runner_experience", NULL,
+                                        choices  = runner_experiences, 
+                                        selected = runner_experiences[6]))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Runs (sessions) per week")),
+          column(width = 8, numericInput("runner_runs_per_week", NULL, 
+                                         min = 0, value = 3, step = 1))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Average weekly distance in km")),
+          column(width = 8, numericInput("runner_average_weekly_distance", NULL, 
+                                         min = 0, value = 25, step = 1))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "Types of training")),
+          column(width = 8, selectizeInput("runner_type_of_training", NULL, 
+                                           choices  = runner_types_of_training,
+                                           multiple = TRUE))
+        ),
+        checkboxInput("input_form_correct", 
+                      "I didn't fill out the form (such that we know to ignore the data)",
+                      value = FALSE),
+        withBusyIndicatorUI(
+          actionButton("create_account_button", "Create Account",
+                       style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
+      )
+    }
+    ui
+  }) 
+  
+  observeEvent(input$create_account_button, {
+    
+    # Read the database
+    source("R/read_data_reactive.R", local = TRUE)
+    
+    # Check if account name is entered
+    validate(
+      need(input$create_account_name != "", 
+           "Please enter a user name.")
+    )
+    # Check if account name is unique
+    validate(
+      need(!(input$create_account_name %in% c(rv_db$user$name, rv_db$user$email)), 
+           "User name is already taken, please enter another one.")
+    )
+    # If email is filled in, check if email address is valid
+    if(input$create_account_email != "") {
+      validate(
+        need(isValidEmail(input$create_account_email), 
+             "Invalid email address")
+      )
+    }
+    # Check if email address is unique 
+    validate(
+      need(!(input$create_account_email %in% c(rv_db$user$email)), 
+           "Email address already in use.")
+    )
+    # Check if password was filled in
+    validate(
+      need(input$create_account_password1 != "", 
+           "Please enter a password")
+    )
+    # Check if passwords are the same
+    validate(
+      need(input$create_account_password1 == input$create_account_password2, 
+           "Passwords not equal.")
+    )
+    
+    # Add new user
+    new_user <- tibble(
+      user_id     = max(rv_db$user$user_id) + 1,
+      name        = input$create_account_name,
+      email       = input$create_account_email,
+      pw_hash     = input$create_account_password1 %>% 
+        charToRaw() %>% 
+        hash() %>% 
+        as.character() %>% 
+        paste(collapse = ""),
+      date_joined = date()
+    )
+    
+    rv_db$user <- bind_rows(rv_db$user, new_user)
+    
+    # Write the database
+    source("R/write_data_reactive.R", local = TRUE)
+    
+    # Login
+    rv_user$user_id   <- new_user$user_id
+    rv_user$user_name <- new_user$name
+    
+    # Go to page 2
+    updateTabItems(session, "tab_profile", "profile_general")
+  })
+  
+  # PAGE - PROFILE GENERAL -----
+  
+  output$profile_general_ui <- renderUI({
+    ui <- NULL
+    if(!is.null(rv_user$user_id)) {
+      ui <- list(
+        div(title = "New video analysis",
+            style = "width:50%; float:left;",
+                actionButton("new_video_analysis_button",
+                             label = span(img(src="new_video_analysis.png", style = "width:100%;")))),
+        div(title = "Load external data", 
+            style = "width:50%; float:right;",
+            actionButton("load_external_data",
+                         label = span(img(src="matrix_data.png", style = "width:100%;"))))
+      )
+    }
+    
+    div(
+      style = "text-align:center; width:80%; max-width:900px; margin: 0 auto;",
+      ui
+    )
+  })
+  
+  # Go to tab when image is clicked
+  observeEvent(input$new_video_analysis_button, {
+    updateTabItems(session, "tab_profile", "profile_video_analysis")
+  })
+  
+  # MENUS -----
+  
+  # main menu
+  output$menu_main <- renderMenu({
+    if(is.null(rv_user$user_id)) {
+      sidebarMenu(
+        id = "tab_main", 
+        menuItem("Main",
+                 menuSubItem("Home", tabName = "home"),
+                 menuSubItem("Create Account", tabName = "create_account"))
+      )
+    } else { 
+      sidebarMenu(
+        id = "tab_main", 
+        menuItem("Main",
+                 menuSubItem("Home", tabName = "home"))
+      )
+    }
+  })
+  
+  # profile menu
   output$menu_profile <- renderMenu({
     if(!is.null(rv_user$user_id)) {
       sidebarMenu(
         id = "tab_profile", 
         menuItem("Profile",
-                 menuSubItem("General", tabName = "General"),
-                 menuSubItem("Runs", tabName = "Runs"),
-                 menuSubItem("Video Analysis", tabName = "video_analysis"))
+                 menuSubItem("General", tabName = "profile_general"),
+                 menuSubItem("Runs", tabName = "profile_runs"),
+                 menuSubItem("Video Analysis", tabName = "profile_video_analysis"))
       )
     } else { NULL }
   })
@@ -140,13 +396,15 @@ shinyServer(function(input, output, session) {
   
   # Reactive video variables
   rv_vid <- reactiveValues(
-    inFile      = NULL,
-    temp_file   = NULL,
-    frame_rate  = NULL,
-    frames      = NULL,
-    frame_start = NULL,
-    frame_end   = NULL,
-    loaded      = FALSE
+    inFile          = NULL,
+    temp_file       = NULL,
+    frame_rate      = NULL,
+    frame_rate_orig = NULL,
+    frame_rate_mult = NULL,
+    frames          = NULL,
+    frame_start     = NULL,
+    frame_end       = NULL,
+    loaded          = FALSE
   )
   
   # Upload and read as data
@@ -176,15 +434,17 @@ shinyServer(function(input, output, session) {
         str_split(pattern = "/") %>% 
         unlist() %>% 
         as.numeric()
-      rv_vid$frame_rate <- fr[1]/fr[2]
-      rv_vid$frames      <- as.numeric(frm_info[2])
-      rv_vid$frame_start <- floor(input$upload_start_time * rv_vid$frame_rate)
-      rv_vid$frame_end   <- rv_vid$frame_start + rv_vid$frames - 1
+      rv_vid$frame_rate      <- 30
+      rv_vid$frame_rate_orig <- fr[1]/fr[2]
+      rv_vid$frame_rate_mult <- rv_vid$frame_rate_orig / 30
+      rv_vid$frames          <- round((input$upload_end_time - input$upload_start_time) * rv_vid$frame_rate_orig)
+      rv_vid$frame_start     <- round(input$upload_start_time * rv_vid$frame_rate_orig)
+      rv_vid$frame_end       <- rv_vid$frame_start + rv_vid$frames - 1
       
       # Copy video and paste with frame numbers
       system(paste('ffmpeg -r 30 -i', rv_vid$inFile$datapath, 
-                   '-ss ', input$upload_start_time,
-                   '-t', input$upload_end_time - input$upload_start_time,
+                   '-ss ', input$upload_start_time * rv_vid$frame_rate_mult,
+                   '-t', (input$upload_end_time - input$upload_start_time) * rv_vid$frame_rate_mult,
                    # Set font and text location
                    '-vf  "drawtext=fontfile=/Windows/Fonts/arial.ttf: x=(w-tw)/20: y=20: ',
                    paste('fontsize=', fontsize, ':'), # set fontsize
@@ -277,8 +537,8 @@ shinyServer(function(input, output, session) {
         rv_frame$selection <- input$video_frame_start:input$video_frame_end
         
         # Video Loading parameters
-        start <- (input$video_frame_start - 0.5) / rv_vid$frame_rate
-        end <- input$video_frame_end / rv_vid$frame_rate
+        start <- (input$video_frame_start - rv_vid$frame_start) / rv_vid$frame_rate
+        end   <- (1 + input$video_frame_end - rv_vid$frame_start) / rv_vid$frame_rate
         
         start_hr   <- as.character(start %/% 3600)
         start_min  <- as.character(start %% 3600 %/% 60)
@@ -340,8 +600,8 @@ shinyServer(function(input, output, session) {
       source("R/read_data_reactive.R", local = TRUE)
       
       path <- isolate(rv_db$frame) %>% 
-        filter(frame_num == rv_frame$current_frame_num & frame_upload_id == rv_frame$frame_upload_id) %>% 
-        select(path)
+        dplyr::filter(frame_num == rv_frame$current_frame_num & frame_upload_id == rv_frame$frame_upload_id) %>% 
+        dplyr::select(path)
       
       img(src= paste0("frames/", path[[1]]), align = "center", width = "100%", height = "auto")
     } else { NULL }
