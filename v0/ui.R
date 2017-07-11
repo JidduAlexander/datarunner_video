@@ -40,6 +40,7 @@ shinyUI(dashboardPage(
           id = "tab_new_video_analysis",
           width = 12,
           tabPanel(
+            # Run Info -----
             title = "Run info",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
@@ -101,76 +102,79 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
+            # Upload Video -----
             title = "Upload Video",
-            fluidRow(
-              column(width = 2),
-              column(width = 8, 
-                     h3("Upload a video"),
-                     p("Upload a video where you run past"),
-                     p(paste0("If your video is long you can use start and end time to upload only a ",
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              h3("Upload a video"),
+              p("Upload a video of you running."),
+              p(paste0("If your video is long you can use start and end time to upload only a ",
                        "segment of your video. Maximum video upload size is ", shiny_file_size, "MB.")),
-                     fluidRow(
-                       column(width = 4, p(id = "input_text", "Start time (seconds)")),
-                       column(width = 8, numericInput("upload_start_time", NULL, value = 0, min = 0))
-                     ),
-                     fluidRow(
-                       column(width = 4, p(id = "input_text", "End time (seconds)")),
-                       column(width = 8, numericInput("upload_end_time", NULL, value = 30, min = 0))
-                     ),
-                     fluidRow(
-                       column(width = 4),
-                       column(width = 8, fileInput("upload_video", "Upload Video"))
-                     )
+              fluidRow(
+                column(width = 4, p(id = "input_text", "Start time (seconds)")),
+                column(width = 8, numericInput("upload_start_time", NULL, value = 0, min = 0))
+              ),
+              fluidRow(
+                column(width = 4, p(id = "input_text", "End time (seconds)")),
+                column(width = 8, numericInput("upload_end_time", NULL, value = 30, min = 0))
+              ),
+              fluidRow(
+                column(width = 4),
+                column(width = 8, fileInput("upload_video", "Upload Video"))
               )
             )
           ),
           tabPanel(
+            # Select Frames -----
             title = "Select frames",
-            # INSPECT VIDEO -----
-            h4("Inspect your video for desired frames"),
-            p("Here we grab the frames (single images) from the video that we use for analysing 
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              # INSPECT VIDEO -----
+              h3("Inspect your video for desired frames"),
+              p("Here we grab the frames (single images) from the video that we use for analysing 
               your running style."),
-            p("Use the buttons and the slider to slow down the video and skip frames. Skipping 
-              frames doesn't work in Chrome."),
+              p("Use the buttons and the slider to slow down the video and skip frames. Skipping 
+              frames doesn't work in Chrome.")
+            ),
             uiOutput("upload_show_video"),
-            # PICK START AND END FRAME -----
-            h4("3C. Pick first ans last frame of the analysis segment"),
-            fluidRow(
-              column(width = 4, 
-                     p(id = "input_text", 
-                       "Start frame (Look for the first frame where your back foot has lift of the ground)")),
-              column(width = 8, uiOutput("video_frame_start_ui"))
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              # PICK START AND END FRAME -----
+              h3("Pick start and end frame for the analysis"),
+              fluidRow(
+                column(width = 4, 
+                       p(id = "input_text", 
+                         "Start frame (Look for the first frame where your back foot has lift of the ground)")),
+                column(width = 8, uiOutput("video_frame_start_ui"))
+              ),
+              fluidRow(
+                column(width = 4, 
+                       p(id = "input_text", 
+                         "End frame (Look for the last frame where your back foot is till on the ground)")),
+                column(width = 8, uiOutput("video_frame_end_ui"))
+              ),
+              withBusyIndicatorUI(
+                actionButton("video_analysis_next_2", "Continue with selection",
+                             style = "color: #232323; background-color: #65ff00; border-color: #434343;")     
+              ),
+              hr(),
+              h3("Explanation by example"),
+              p("The two images underneath show frame 28 and 61 of an example video. Frame 28 is the first frame 
+                in the video where the back foot just lifted of the ground (see white circle). Frame 61 is the 
+                last frame in the video where a foot (back foot) is still on the ground.")
             ),
             fluidRow(
-              column(width = 4, 
-                     p(id = "input_text", 
-                       "End frame (Look for the last frame where your back foot is till on the ground)")),
-              column(width = 8, uiOutput("video_frame_end_ui"))
-            ),
-            fluidRow(
-              column(width = 4),
-              column(width = 8, 
-                     withBusyIndicatorUI(actionButton("video_frame_button", "Extract frame from video >")))
-            ),
-            p("The example underneath is a split of two frames. The left side shows the start frame 
-                         (frame 28) and the left side shows the end frame (frame 61)."),
-            fluidRow(column(width = 1),
-                     column(width = 10, img(src="feetcontact.png", align = "center")),
-                     column(width = 1)
-            ),
-            p(""),
-            withBusyIndicatorUI(
-              actionButton("video_analysis_next_2", "Next",
-                           style = "color: #232323; background-color: #65ff00; border-color: #434343;")     
+              column(width = 6, img(src="frame28.png", style = "width:100%; padding:5px")),
+              column(width = 6, img(src="frame61.png", style = "width:100%; padding:5px"))
             )
           ),
           tabPanel(
-            title = "Analyse frames",
             # 5. ANALYSE FRAMES -----
+            title = "Analyse frames",
             fluidRow(
               column(width = 2),
               column(width = 8,
-                     h4("4. Analyse, frame by frame"),
+                     h3("4. Analyse, frame by frame"),
                      p("For each frame you have to answer a few questions.")
               ),
               column(width = 2)      
@@ -265,12 +269,13 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
+            # Report -----
             title = "Report"
           )
         )
       )
     ),
-    # Footer
+    # Footer -----
     div(style = "width:100%; height:200px;")
   )
 ))

@@ -128,7 +128,7 @@ shinyServer(function(input, output, session) {
   # PAGE - HOME -----
   
   output$home_ui <- renderUI({
-    ui <-  p("VIDEO: quick steps, large jumps, fly (whitch video), Sprint, backwards, leisure, Hinkelen. 
+    ui <-  p("VIDEO: quick steps, large jumps, fly (whitch video), Sprint, backwards, leisure, Hinkelen, play backward slowly 120fps. 
              Questions: Does my running style have a speed limit. What's efficient running? 
              What leads to fewer injuries?
              Brief explanation of the App.")
@@ -426,20 +426,17 @@ shinyServer(function(input, output, session) {
                            as.numeric(str_sub(fontsize[2], 25, -1))) / 50, 0)
       
       # Get frame rate
-      frm_info <- system(paste('ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate,nb_frames',
+      frm_info1 <- system(paste('ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate,nb_frames',
                                ' -of default=noprint_wrappers=1:nokey=1', 
                                rv_vid$inFile$datapath), 
                          intern = TRUE)
-      fr <- frm_info[1] %>% 
+      fr <- frm_info1[1] %>% 
         str_split(pattern = "/") %>% 
         unlist() %>% 
         as.numeric()
       rv_vid$frame_rate      <- 30
       rv_vid$frame_rate_orig <- fr[1]/fr[2]
-      rv_vid$frame_rate_mult <- rv_vid$frame_rate_orig / 30
-      rv_vid$frames          <- round((input$upload_end_time - input$upload_start_time) * rv_vid$frame_rate_orig)
-      rv_vid$frame_start     <- round(input$upload_start_time * rv_vid$frame_rate_orig)
-      rv_vid$frame_end       <- rv_vid$frame_start + rv_vid$frames - 1
+      rv_vid$frame_rate_mult <- rv_vid$frame_rate_orig / rv_vid$frame_rate
       
       # Copy video and paste with frame numbers
       system(paste('ffmpeg -r 30 -i', rv_vid$inFile$datapath, 
@@ -454,7 +451,19 @@ shinyServer(function(input, output, session) {
                    paste0("www/temp/", rv_vid$temp_file))) # Output file name
     })
     
+    # Info of loaded video, because numeric end time may have gone beyond video time
+    frm_info2 <- system(paste('ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate,nb_frames',
+                             ' -of default=noprint_wrappers=1:nokey=1', 
+                             paste0("www/temp/", rv_vid$temp_file)), 
+                       intern = TRUE)
+    rv_vid$frames          <- as.numeric(frm_info2[2])
+    rv_vid$frame_start     <- round(input$upload_start_time * rv_vid$frame_rate_orig)
+    rv_vid$frame_end       <- rv_vid$frame_start + rv_vid$frames - 1
+    
     rv_vid$loaded <- TRUE
+    
+    # Go to next tab
+    updateTabItems(session, "tab_new_video_analysis", "Select frames")
   })
   
   # Render video
@@ -462,22 +471,32 @@ shinyServer(function(input, output, session) {
     rv_vid$inFile
     if(isolate(rv_vid$loaded)) {
       list(
-        fluidRow(
-          column(width = 3),
-          # Forward and backward frame buttons
-          column(width = 2,
-                 div(style='float:left;', actionButton("back0", NULL, icon = icon("chevron-left"))), 
-                 actionButton("forward0", NULL, icon = icon("chevron-right")),
-                 p("Move 1 frame (not in Chrome)")),
-          column(width = 7, 
-                 sliderInput("video_slow", "Video play back rate",
-                             min = 0.1, max = 10, value = 4, step = 0.1, ticks = FALSE,
-                             label = div(style='width:300px;', 
-                                         div(style='float:left;', 'fast'), 
-                                         div(style='float:right;', 'slow'))))
+        div(
+          style = "width:80%; margin: 0 auto;",
+          HTML(paste('<video id="v0" controls tabindex="0" width = "100%" max-height = "600px">',
+                     '<source type="video/webm; codecs=&quot;vp8, vorbis&quot;" ',
+                     paste0('src="temp/', rv_vid$temp_file, '">'),
+                     '</source>'))
         ),
-        # Set input$vid0_currentTime to current video time when clicked
-        tags$script("
+        div(
+          style = "border:1px solid; border-top:none; width:80%; margin: 0 auto; padding:10px",
+          fluidRow(
+            column(width = 1),
+            column(width = 3, h4("ADVANCED VIDEO CONTROLS")),
+            # Forward and backward frame buttons
+            column(width = 2,
+                   div(style='float:left;', actionButton("back0", NULL, icon = icon("chevron-left"))), 
+                   actionButton("forward0", NULL, icon = icon("chevron-right")),
+                   p("Move 1 frame (not in Chrome)")),
+            column(width = 6, 
+                   sliderInput("video_slow", "Video play back rate",
+                               min = 0.1, max = 10, value = 4, step = 0.1, ticks = FALSE,
+                               label = div(style='width:300px;', 
+                                           div(style='float:left;', 'fast'), 
+                                           div(style='float:right;', 'slow'))))
+          ),
+          # Set input$vid0_currentTime to current video time when clicked
+          tags$script("
                     document.getElementById('back0').onclick = function() {
                     var myVid = document.getElementById('v0');
                     Shiny.onInputChange('vid0_currentTime', myVid.currentTime);
@@ -486,15 +505,11 @@ shinyServer(function(input, output, session) {
                     var myVid = document.getElementById('v0');
                     Shiny.onInputChange('vid0_currentTime', myVid.currentTime);
                     };
-                    "),
-        # Video output in HTML
-        HTML(paste('<center><video id="v0" controls tabindex="0" height = "600px">',
-                   '<source type="video/webm; codecs=&quot;vp8, vorbis&quot;" ',
-                   paste0('src="temp/', rv_vid$temp_file, '">'),
-                   '</source></center>'))
+                    ")
         )
-  } else { NULL }
-})
+      )
+    } else { NULL }
+  })
   
   # Move one frame forwards or backwards
   observeEvent(input$back0, {
@@ -519,19 +534,23 @@ shinyServer(function(input, output, session) {
   
   output$video_frame_start_ui <- renderUI({
     if(!is.null(rv_vid$frame_end)) {
-      numericInput("video_frame_start", NULL, value = 0, min = 0, max = rv_vid$frame_end)
+      selectInput("video_frame_start", NULL, 
+                  choices  = rv_vid$frame_start:rv_vid$frame_end,
+                  selected = rv_vid$frame_start)
     } else { NULL }
   })
   
   output$video_frame_end_ui <- renderUI({
     if(!is.null(rv_vid$frame_end)) {
-      numericInput("video_frame_end", NULL, value = 1, min = 0, max = rv_vid$frame_end)
+      selectInput("video_frame_end", NULL, 
+                  choices  = rv_vid$frame_start:rv_vid$frame_end,
+                  selected = rv_vid$frame_end)
     } else { NULL }
   })
   
   # Frames to images
   observeEvent(input$video_frame_button, {
-    withBusyIndicatorServer("video_frame_button", {
+    withBusyIndicatorServer("video_analysis_next_2", {
       withProgress(message = 'Preparing frame images', {
         
         rv_frame$selection <- input$video_frame_start:input$video_frame_end
@@ -588,6 +607,9 @@ shinyServer(function(input, output, session) {
         
         # Write the database
         source("R/write_data_reactive.R", local = TRUE)
+        
+        # Go to next tab
+        updateTabItems(session, "tab_new_video_analysis", "Analyse frames")
       })
     })
   })
