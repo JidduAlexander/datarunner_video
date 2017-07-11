@@ -549,15 +549,18 @@ shinyServer(function(input, output, session) {
   })
   
   # Frames to images
-  observeEvent(input$video_frame_button, {
+  observeEvent(input$video_analysis_next_2, {
     withBusyIndicatorServer("video_analysis_next_2", {
       withProgress(message = 'Preparing frame images', {
         
-        rv_frame$selection <- input$video_frame_start:input$video_frame_end
+        video_frame_start <- as.numeric(input$video_frame_start)
+        video_frame_end   <- as.numeric(input$video_frame_end)
+        
+        rv_frame$selection <- video_frame_start:video_frame_end
         
         # Video Loading parameters
-        start <- (input$video_frame_start - rv_vid$frame_start) / rv_vid$frame_rate
-        end   <- (1 + input$video_frame_end - rv_vid$frame_start) / rv_vid$frame_rate
+        start <- (video_frame_start - rv_vid$frame_start) / rv_vid$frame_rate
+        end   <- (1 + video_frame_end - rv_vid$frame_start) / rv_vid$frame_rate
         
         start_hr   <- as.character(start %/% 3600)
         start_min  <- as.character(start %% 3600 %/% 60)
@@ -569,7 +572,7 @@ shinyServer(function(input, output, session) {
         
         duration <- end - start
         
-        seq_frames <- 1:(input$video_frame_end + 1 - input$video_frame_start)
+        seq_frames <- 1:(video_frame_end + 1 - video_frame_start)
         
         # Read the database
         source("R/read_data_reactive.R", local = TRUE)
