@@ -83,8 +83,8 @@ types_of_injuries <- c("Ankle",
                        "Knee")
 
 influences_of_injuries <- c("Pain when running, but continue running",
-                            "Stop (cut short) each run when I fell pain",
-                            "Stop running for some time")
+                            "Stop (cut short) each run when I feel pain",
+                            "Stop running for period of time")
 
 # Reusable chunks
 

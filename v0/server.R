@@ -226,13 +226,13 @@ shinyServer(function(input, output, session) {
                                                choices  = types_of_injuries))
         ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "How do injuries influences your running")),
+          column(width = 4, p(id = "input_text", "How do injuries influence your running?")),
           column(width = 8, checkboxGroupInput("influence_of_injuries", NULL, 
                                                choices  = influences_of_injuries))
         ),
         div(style = "text-align:center;", p("RUNNING")),
         fluidRow(
-          column(width = 4, p(id = "input_text", "What's your aim")),
+          column(width = 4, p(id = "input_text", "What's your aim?")),
           column(width = 8, checkboxGroupInput("runner_aim", NULL,
                                                choices  = runner_aims))
         ),
@@ -353,7 +353,6 @@ shinyServer(function(input, output, session) {
       runner_runs_per_week           = as.numeric(input$runner_runs_per_week),
       runner_average_weekly_distance = as.numeric(input$runner_average_weekly_distance),
       # training types
-      runner_type_of_training        = list(input$runner_type_of_training),
       training_type_home_jog         = runner_types_of_training[1] %in% input$runner_type_of_training,
       training_type_interval_sprint  = runner_types_of_training[2] %in% input$runner_type_of_training,
       training_type_treadmill        = runner_types_of_training[3] %in% input$runner_type_of_training,
