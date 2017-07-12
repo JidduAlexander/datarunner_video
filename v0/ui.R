@@ -108,7 +108,8 @@ shinyUI(dashboardPage(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               h3("Upload a video"),
               p("Upload a video of you running."),
-              p(paste0("If your video is long you can use start and end time to upload only a ",
+              p(paste0("Your video may be long with unnecessary footage at the start and end. In that
+                       case you can use start and end time to upload only a ",
                        "segment of your video. Maximum video upload size is ", shiny_file_size, "MB.")),
               fluidRow(
                 column(width = 4, p(id = "input_text", "Start time (seconds)")),
@@ -121,7 +122,13 @@ shinyUI(dashboardPage(
               fluidRow(
                 column(width = 4),
                 column(width = 8, fileInput("upload_video", "Upload Video"))
-              )
+              ),
+              hr(style = "margin:80px 0px"),
+              h3("Example video"),
+              p("The numbers in the top left indicate frame (single images of the video) numbers 
+                and are automatically added when you upload a video."),
+              tags$video(src = "example_vid.mp4", type = "video/mp4", autoplay = NA, controls = NA,
+                         style = "width:100%;")
             )
           ),
           tabPanel(
@@ -159,7 +166,7 @@ shinyUI(dashboardPage(
               ),
               hr(style = "margin:80px 0px"),
               h3("Explanation by example"),
-              p("Check out this example video")
+              p("Here is the example video again.")
             ),
             div(
               style = "width:70%; margin: 0 auto;",
@@ -312,17 +319,145 @@ shinyUI(dashboardPage(
               p("")
             ),
             div(
-              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              style = "text-align:center; width:80%; max-width:600px; margin: 0 auto;",
               hr(style = "margin:80px 0px"),
               h3("Explanation with images"),
-              h4("Air versus ground"),
-              p("-"),
-              h4("In front versus behind"),
-              p("-"),
-              h4("Flat versus Landing versus taking off"),
-              p("-"),
-              h4("Flat versus heel versus toe"),
-              p("-")
+              p("The following is a sequence of frames for 1 step. Some frames have been omitted, 
+                that means they have the same analysis result as the previous frame.")
+            ),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis28.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(tags$li("Air")),
+                     h5("Right Foot"),
+                     tags$ul(tags$li("Air")),
+                     p("Both feet are in the air, in frames 29 and 30 too.")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis31.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("In front"),
+                       tags$li("Landing"),
+                       tags$li("Heel land")
+                     ),
+                     p("The foot is getting in contact with the ground in front of the body. The 
+                       toes are still in the air so it is a heel landing")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis32.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("In front"),
+                       tags$li("Flat")
+                     ),
+                     p("The right foot is now completely flat on the ground. It is still in front 
+                       of the body. Frames 33 and 34 will show the difference between in front and 
+                       behind the body.")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis33r.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("In front"),
+                       tags$li("Flat")
+                     ),
+                     p("The right foot is kind of getting underneath the body now. To have a clear 
+                       decision we say that the foot is 'in front' if the heel is in front of the 
+                       back of the bum, see the red line. In this case it is still in front.")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis34r.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("Behind"),
+                       tags$li("Flat")
+                     ),
+                     p("The right foot has now gone behind the red line.")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis35.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("Behind"),
+                       tags$li("Taking off")
+                     ),
+                     p("The heel is (very) slightly lifting if the ground. That means it is 
+                       'taking off.' Frames 36, 37 and 38 are the same. ")
+              ),
+              column(width = 2)
+            ),
+            p(""),
+            fluidRow(
+              column(width = 2),
+              column(width = 5, img(src='analysis38.png', width = "100%")),
+              column(width = 3,
+                     h5("Left Foot"),
+                     tags$ul(
+                       tags$li("Air")
+                     ),
+                     h5("Right Foot"),
+                     tags$ul(
+                       tags$li("Ground"),
+                       tags$li("Behind"),
+                       tags$li("Taking off")
+                     ),
+                     p("The toes are still in contact with the ground. That means it is still 'taking off'.
+                       The next frame is like frame 28, but with the feet switched.")
+              ),
+              column(width = 2)
             )
           ),
           tabPanel(

@@ -18,11 +18,13 @@ source("R/functions.R")
 # Read databases
 
 db_user         <- readRDS("input/db/db_user.Rds")
+db_user_info    <- readRDS("input/db/db_user_info.Rds")
 db_frame        <- readRDS("input/db/db_frame.Rds")
 db_frame_upload <- readRDS("input/db/db_frame_upload.Rds")
 
 # Get the modification times
 db_user_mtime          <- file.mtime("input/db/db_user.Rds")
+db_user_info_mtime     <- file.mtime("input/db/db_user_info.Rds")
 db_frame_mtime         <- file.mtime("input/db/db_frame.Rds")
 db_frame_upload_mtime  <- file.mtime("input/db/db_frame_upload.Rds")
 
@@ -77,10 +79,10 @@ runner_types_of_training <- c("Just leave my house and jog",
 
 run_distances <- c("Up to 200m", "A 400m sprint", "About 1km", "3 to 5km", "5 to 12km", "12 to 30km", "Marathon distance", "50km+")
 
-types_of_injuries <- c("None", "Ankle", "Knee")
+types_of_injuries <- c("Ankle", 
+                       "Knee")
 
-influences_of_injuries <- c("None", 
-                            "Pain when running, but continue running",
+influences_of_injuries <- c("Pain when running, but continue running",
                             "Stop (cut short) each run when I fell pain",
                             "Stop running for some time")
 

@@ -8,10 +8,12 @@ shinyServer(function(input, output, session) {
   # Initialise databases
   rv_db <- reactiveValues(
     user         = db_user,
+    user_info    = db_user_info,
     frame        = db_frame,
     frame_upload = db_frame_upload,
     # Modification times to check reloading
     user_mtime          = db_user_mtime,
+    user_info_mtime     = db_user_info_mtime,
     frame_mtime         = db_frame_mtime,
     frame_upload_mtime  = db_frame_upload_mtime
   )
@@ -164,43 +166,47 @@ shinyServer(function(input, output, session) {
       ui <- p("Please log out first.")
     } else {
       ui <- div(
-        style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
-        h3("Login details"),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "* User name")),
-          column(width = 8, textInput("create_account_name", NULL, value = ""))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Email")),
-          column(width = 8, textInput("create_account_email", NULL, value = ""))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "* Password")),
-          column(width = 8,  passwordInput("create_account_password1", NULL))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "* Retype Password")),
-          column(width = 8, passwordInput("create_account_password2", NULL))
-        ),
-        p("You are at at the forefront of running analysis curiousity. Your awesomeness 
+        style = "width:70%; max-width:600px; margin: 0 auto;",
+        div(
+          style = "text-align:center;",
+          h3("Login details"),
+          fluidRow(
+            column(width = 4, p(id = "input_text", "* User name")),
+            column(width = 8, textInput("create_account_name", NULL, value = ""))
+          ),
+          fluidRow(
+            column(width = 4, p(id = "input_text", "Email")),
+            column(width = 8, textInput("create_account_email", NULL, value = ""))
+          ),
+          fluidRow(
+            column(width = 4, p(id = "input_text", "* Password")),
+            column(width = 8,  passwordInput("create_account_password1", NULL))
+          ),
+          fluidRow(
+            column(width = 4, p(id = "input_text", "* Retype Password")),
+            column(width = 8, passwordInput("create_account_password2", NULL))
+          ),
+          p("You are at at the forefront of running analysis curiousity. Your awesomeness 
             has the fortunate advantage that you can influence the future of this 
             application. We welcome your feedback and directions and we may approach you 
             asking for it."),
-        hr(),
-        h3("A little more about you"),
-        p(paste0("Depending on you experience and body you probably have different 
+          hr(),
+          h3("A little more about you"),
+          p(paste0("Depending on you experience and body you probably have different 
                  strengths and weaknesses. To take this into the analysis please 
                  fill out the following form.")),
-        p("GENERAL"),
+          p("GENERAL")
+        ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Age")),
-          column(width = 8, numericInput("runner_age", NULL, 
-                                         min = 1, value = 30, step = 1))
+          column(width = 4, p(id = "input_text", "Year of birth")),
+          column(width = 8, selectInput("runner_yob", NULL, 
+                                        choices  = 1900:as.numeric(str_sub(date(), -4, -1)), 
+                                        selected = "1990"))
         ),
         fluidRow(
           column(width = 4, p(id = "input_text", "Height in cm")),
           column(width = 8, numericInput("runner_height", NULL, 
-                                         min = 0, value = 175, step = 1))
+                                         min = 50, value = 175, step = 1))
         ),
         fluidRow(
           column(width = 4, p(id = "input_text", "Weight in kg")),
@@ -209,59 +215,61 @@ shinyServer(function(input, output, session) {
         ),
         fluidRow(
           column(width = 4, p(id = "input_text", "Sex")),
-          column(width = 8, selectInput("runner_sex", NULL, 
-                                        choices  = c("Male", "Female", "Other"),
-                                        selected = "Male"))
+          column(width = 8, radioButtons("runner_sex", NULL, 
+                                         choices  = c("Male", "Female", "Other"),
+                                         selected = "Male"))
         ),
-        p("INJURIES"),
+        div(style = "text-align:center;", p("INJURIES")),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Types of injuries")),
-          column(width = 8, selectizeInput("type_of_injuries", NULL, 
-                                           choices  = types_of_injuries,
-                                           multiple = TRUE))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Influences on running")),
-          column(width = 8, selectizeInput("influence_of_injuries", NULL, 
-                                           choices  = influences_of_injuries,
-                                           multiple = TRUE))
-        ),
-        p("RUNNING"),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Aim")),
-          column(width = 8, selectInput("runner_aim", NULL,
-                                        choices  = runner_aims, 
-                                        selected = runner_aims[1],
-                                        multiple = TRUE))
+          column(width = 4, p(id = "input_text", "What types of injuries do you deal with?")),
+          column(width = 8, checkboxGroupInput("type_of_injuries", NULL, 
+                                               choices  = types_of_injuries))
         ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Experience")),
-          column(width = 8, selectInput("runner_experience", NULL,
-                                        choices  = runner_experiences, 
-                                        selected = runner_experiences[6]))
+          column(width = 4, p(id = "input_text", "How do injuries influences your running")),
+          column(width = 8, checkboxGroupInput("influence_of_injuries", NULL, 
+                                               choices  = influences_of_injuries))
+        ),
+        div(style = "text-align:center;", p("RUNNING")),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "What's your aim")),
+          column(width = 8, checkboxGroupInput("runner_aim", NULL,
+                                               choices  = runner_aims))
         ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Runs (sessions) per week")),
+          column(width = 4, p(id = "input_text", "How long have you been running?")),
+          column(width = 8, radioButtons("runner_experience", NULL,
+                                         choices  = runner_experiences, 
+                                         selected = runner_experiences[6]))
+        ),
+        fluidRow(
+          column(width = 4, p(id = "input_text", "How many runs (sessions) do you do per week?")),
           column(width = 8, numericInput("runner_runs_per_week", NULL, 
                                          min = 0, value = 3, step = 1))
         ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Average weekly distance in km")),
+          column(width = 4, p(id = "input_text", "What is the average weekly distance (in km) that you run?")),
           column(width = 8, numericInput("runner_average_weekly_distance", NULL, 
                                          min = 0, value = 25, step = 1))
         ),
         fluidRow(
-          column(width = 4, p(id = "input_text", "Types of training")),
-          column(width = 8, selectizeInput("runner_type_of_training", NULL, 
-                                           choices  = runner_types_of_training,
-                                           multiple = TRUE))
+          column(width = 4, p(id = "input_text", "What types of training do you do?")),
+          column(width = 8, checkboxGroupInput("runner_type_of_training", NULL, 
+                                               choices  = runner_types_of_training))
         ),
-        checkboxInput("input_form_correct", 
-                      "I didn't fill out the form (such that we know to ignore the data)",
-                      value = FALSE),
-        withBusyIndicatorUI(
-          actionButton("create_account_button", "Create Account",
-                       style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
+        fluidRow(
+          column(width = 4, 
+                 p(id = "input_text", 
+                   "I didn't (want to) fill out the form. (If you didn't actually fill the form we'd 
+                   like to know it such that we know to ignore the data)")),
+          column(width = 8, checkboxInput("input_form_correct", NULL, value = FALSE))
+        ),
+        div(style = "text-align:center;",
+            withBusyIndicatorUI(
+              actionButton("create_account_button", "Create Account",
+                           style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
+        ),
+        div(style = "height:200px")
       )
     }
     ui
@@ -305,7 +313,7 @@ shinyServer(function(input, output, session) {
            "Passwords not equal.")
     )
     
-    # Add new user
+    # Add new user to user database
     new_user <- tibble(
       user_id     = max(rv_db$user$user_id) + 1,
       name        = input$create_account_name,
@@ -319,6 +327,41 @@ shinyServer(function(input, output, session) {
     )
     
     rv_db$user <- bind_rows(rv_db$user, new_user)
+    
+    # Add new user info to user info database
+    new_user_info <- tibble(
+      user_id                        = new_user$user_id,
+      name                           = new_user$name,
+      runner_yob                     = as.numeric(input$runner_yob),
+      runner_height                  = as.numeric(input$runner_height),
+      runner_weight                  = as.numeric(input$runner_weight),
+      runner_sex                     = as.character(input$runner_sex),
+      # injuries
+      injuries_ankle                 = types_of_injuries[1] %in% input$type_of_injuries,
+      injuries_knee                  = types_of_injuries[2] %in% input$type_of_injuries,
+      # influence_of_injuries
+      deal_with_injuries_pain_run    = influences_of_injuries[1] %in% input$influence_of_injuries,
+      deal_with_injuries_stop_run    = influences_of_injuries[2] %in% input$influence_of_injuries,
+      deal_with_injuries_long_break  = influences_of_injuries[3] %in% input$influence_of_injuries,
+      # aim
+      aim_joy                        = runner_aims[1] %in% input$runner_aim,
+      aim_health                     = runner_aims[2] %in% input$runner_aim,
+      aim_amature                    = runner_aims[3] %in% input$runner_aim,
+      aim_pro                        = runner_aims[4] %in% input$runner_aim,
+      # runner amount/history
+      runner_experience              = as.numeric(input$runner_experience),
+      runner_runs_per_week           = as.numeric(input$runner_runs_per_week),
+      runner_average_weekly_distance = as.numeric(input$runner_average_weekly_distance),
+      # training types
+      runner_type_of_training        = list(input$runner_type_of_training),
+      training_type_home_jog         = runner_types_of_training[1] %in% input$runner_type_of_training,
+      training_type_interval_sprint  = runner_types_of_training[2] %in% input$runner_type_of_training,
+      training_type_treadmill        = runner_types_of_training[3] %in% input$runner_type_of_training,
+      # filled out correctly
+      input_form_correct             = !input$input_form_correct
+    )
+    
+    rv_db$user_info <- bind_rows(rv_db$user_info, new_user_info)
     
     # Write the database
     source("R/write_data_reactive.R", local = TRUE)

@@ -7,6 +7,12 @@ if(rv_db$user_mtime != file.mtime("input/db/db_user.Rds")) {
   rv_db$user_mtime  <- file.mtime("input/db/db_user.Rds")
 }
 
+# User info
+if(rv_db$user_info_mtime != file.mtime("input/db/db_user_info.Rds")) {
+  rv_db$user_info        <- readRDS("input/db/db_user_info.Rds")
+  rv_db$user_info_mtime  <- file.mtime("input/db/db_user_info.Rds")
+}
+
 # Frame
 if(rv_db$frame_mtime != file.mtime("input/db/db_frame.Rds")) {
   rv_db$frame        <- readRDS("input/db/db_frame.Rds")
