@@ -157,9 +157,18 @@ shinyUI(dashboardPage(
                 actionButton("video_analysis_next_2", "Continue with selection",
                              style = "color: #232323; background-color: #65ff00; border-color: #434343;")     
               ),
-              hr(),
+              hr(style = "margin:80px 0px"),
               h3("Explanation by example"),
-              p("The two images underneath show frame 28 and 61 of an example video. Frame 28 is the first frame 
+              p("Check out this example video")
+            ),
+            div(
+              style = "width:70%; margin: 0 auto;",
+              tags$video(src = "example_vid.mp4", type = "video/mp4", autoplay = NA, controls = NA,
+                         style = "width:100%;")
+            ),
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              p("The two images underneath show frame 28 and 61 of the example video. Frame 28 is the first frame 
                 in the video where the back foot just lifted of the ground (see white circle). Frame 61 is the 
                 last frame in the video where a foot (back foot) is still on the ground.")
             ),
@@ -171,111 +180,174 @@ shinyUI(dashboardPage(
           tabPanel(
             # 5. ANALYSE FRAMES -----
             title = "Analyse frames",
-            fluidRow(
-              column(width = 2),
-              column(width = 8,
-                     h3("4. Analyse, frame by frame"),
-                     p("For each frame you have to answer a few questions.")
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              h3("Analyse, frame by frame"),
+              p("For each frame we want to know for both the left and right foot whether
+                       it is in the air or touching the ground. If it is touching the ground we 
+                       also want to know:"),
+              tags$ul(
+                tags$li("if the foot is in front or behind you"), 
+                tags$li("if the foot is landing, flat on the floor, or taking off"), 
+                tags$li("if it is landing is it landing on the toe, on the heel or flat")
               ),
-              column(width = 2)      
+              p("Please see explanations with images underneath.")
             ),
-            fluidRow(
-              column(width = 1),
-              column(width = 10, uiOutput("frame_analysis_img")),
-              column(width = 1)
+            div(
+              style = "border:1px solid #232323; width:80%; margin: 0 auto;",
+              div(style = "width:100%;",
+                  uiOutput("frame_analysis_img"),
+                  p("")
+              ),
+              fluidRow(
+                column(width = 1),
+                column(
+                  width = 5,
+                  h4("LEFT FOOT", align = "center"),
+                  fluidRow(
+                    column(
+                      width = 8, 
+                      p(id = "input_text", "In the air or touching the ground")),
+                    column(
+                      width = 4, 
+                      radioButtons("left_air_ground", NULL, 
+                                   choices = c("Air", "Ground"),
+                                   selected = "Air")
+                    )
+                  ),
+                  conditionalPanel(
+                    "input.left_air_ground == 'Ground'",
+                    fluidRow(
+                      column(
+                        width = 8, 
+                        p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
+                      column(
+                        width = 4, 
+                        radioButtons("left_ground_pos", NULL, 
+                                     choices = c("In front", "Behind"),
+                                     selected = "In front")
+                      )
+                    ),
+                    fluidRow(
+                      column(
+                        width = 8, 
+                        p(id = "input_text", "Is the foot flat on the floor or landing?")),
+                      column(
+                        width = 4, 
+                        radioButtons("left_ground_land", NULL, 
+                                     choices = c("Flat", "Landing", "Taking off"),
+                                     selected = "Flat"))
+                    ),
+                    conditionalPanel(
+                      "input.left_ground_land == 'Landing'",
+                      fluidRow(
+                        column(
+                          width = 8, 
+                          p(id = "input_text", "How is your foot landing?")),
+                        column(
+                          width = 4, 
+                          radioButtons("left_ground_land_detail", NULL, 
+                                       choices = c("Flat", "Heel land", "Toe land"),
+                                       selected = "Flat"))
+                      )
+                    )
+                  )
+                ),
+                column(
+                  width = 5,
+                  h4("RIGHT FOOT", align = "center"),
+                  fluidRow(
+                    column(
+                      width = 8, 
+                      p(id = "input_text", "In the air or touching the ground")),
+                    column(
+                      width = 4, 
+                      radioButtons("right_air_ground", NULL, 
+                                   choices = c("Air", "Ground"),
+                                   selected = "Air")
+                    )
+                  ),
+                  conditionalPanel(
+                    "input.right_air_ground == 'Ground'",
+                    fluidRow(
+                      column(
+                        width = 8, 
+                        p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
+                      column(
+                        width = 4, 
+                        radioButtons("right_ground_pos", NULL, 
+                                     choices = c("In front", "Behind"),
+                                     selected = "In front")
+                      )
+                    ),
+                    fluidRow(
+                      column(
+                        width = 8, 
+                        p(id = "input_text", "Is the foot flat on the floor or landing?")),
+                      column(
+                        width = 4, 
+                        radioButtons("right_ground_land", NULL, 
+                                     choices = c("Flat", "Landing", "Taking off"),
+                                     selected = "Flat"))
+                    ),
+                    conditionalPanel(
+                      "input.right_ground_land == 'Landing'",
+                      fluidRow(
+                        column(
+                          width = 8, 
+                          p(id = "input_text", "How is your foot landing?")),
+                        column(
+                          width = 4, 
+                          radioButtons("right_ground_land_detail", NULL, 
+                                       
+                                       choices = c("Flat", "Heel land", "Toe land"),
+                                       selected = "Flat"))
+                      )
+                    )
+                  )
+                ),
+                column(width = 1)
+              ),
+              div(style = "text-align:center;", uiOutput("next_frame_ui")),
+              p("")
             ),
-            p(""),
-            fluidRow(
-              column(width = 1),
-              column(width = 4,
-                     h4("LEFT FOOT", align = "center"),
-                     fluidRow(
-                       column(width = 8, 
-                              p(id = "input_text", "In the air or touching the ground")),
-                       column(width = 4, 
-                              radioButtons("left_air_ground", NULL, 
-                                           choices = c("Air", "Ground"),
-                                           selected = "Air")
-                       )
-                     ),
-                     conditionalPanel(
-                       "input.left_air_ground == 'Ground'",
-                       fluidRow(
-                         column(width = 8, 
-                                p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
-                         column(width = 4, radioButtons("left_ground_pos", NULL, 
-                                                        choices = c("In front", "Behind"),
-                                                        selected = "In front")
-                         )
-                       ),
-                       fluidRow(
-                         column(width = 8, p(id = "input_text", "Is the foot flat on the floor or landing?")),
-                         column(width = 4, radioButtons("left_ground_land", NULL, 
-                                                        choices = c("Flat", "Landing", "Taking off"),
-                                                        selected = "Flat"))
-                       ),
-                       conditionalPanel(
-                         "input.left_ground_land == 'Landing'",
-                         fluidRow(
-                           column(width = 8, p(id = "input_text", "How is your foot landing?")),
-                           column(width = 4, radioButtons("left_ground_land_detail", NULL, 
-                                                          choices = c("Flat", "Heel land", "Toe land"),
-                                                          selected = "Flat"))
-                         )
-                       )
-                     )
-              ),
-              column(width = 4,
-                     h4("RIGHT FOOT", align = "center"),
-                     fluidRow(
-                       column(width = 8, 
-                              p(id = "input_text", "In the air or touching the ground")),
-                       column(width = 4, 
-                              radioButtons("right_air_ground", NULL, 
-                                           choices = c("Air", "Ground"),
-                                           selected = "Air")
-                       )
-                     ),
-                     conditionalPanel(
-                       "input.right_air_ground == 'Ground'",
-                       fluidRow(
-                         column(width = 8, 
-                                p(id = "input_text", "Where is your foot with respect to center of mass (center of pelvic area)?")),
-                         column(width = 4, radioButtons("right_ground_pos", NULL, 
-                                                        choices = c("In front", "Behind"),
-                                                        selected = "In front")
-                         )
-                       ),
-                       fluidRow(
-                         column(width = 8, p(id = "input_text", "Is the foot flat on the floor or landing?")),
-                         column(width = 4, radioButtons("right_ground_land", NULL, 
-                                                        choices = c("Flat", "Landing"),
-                                                        selected = "Flat"))
-                       ),
-                       conditionalPanel(
-                         "input.right_ground_land == 'Landing'",
-                         fluidRow(
-                           column(width = 8, p(id = "input_text", "How is your foot landing?")),
-                           column(width = 4, radioButtons("right_ground_land_detail", NULL, 
-                                                          
-                                                          choices = c("Flat", "Heel land", "Toe land"),
-                                                          selected = "Flat"))
-                         )
-                       )
-                     ),
-                     div(style = "float:right;", uiOutput("next_frame_ui"))
-              ),
-              column(width = 1)
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              hr(style = "margin:80px 0px"),
+              h3("Explanation with images"),
+              h4("Air versus ground"),
+              p("-"),
+              h4("In front versus behind"),
+              p("-"),
+              h4("Flat versus Landing versus taking off"),
+              p("-"),
+              h4("Flat versus heel versus toe"),
+              p("-")
             )
           ),
           tabPanel(
             # Report -----
             title = "Report"
           )
-        )
+        ),
+        div(style = "height:200px;"),
+        p(" - ")
       )
     ),
     # Footer -----
-    div(style = "width:100%; height:200px;")
+    div(style = "width:100%; height:50px; background-color:#232323; position:fixed; bottom:0;
+         right:0; color:#ececec; text-align:center;",
+        div(style = "text-align:center; width:200px; float:left;",
+            p("nothing here...")),
+        div(style = "width:calc(100% - 200px); float:right;",
+            p(" "),
+            div(style = "text-align:center; width:33%; float:left;",
+                p("Contact")),
+            div(style = "text-align:center; width:33%; float:left;",
+                p("Disclaimer")),
+            div(style = "text-align:center; width:33%; float:right;",
+                p("Links"))
+        )
+    )
   )
 ))
