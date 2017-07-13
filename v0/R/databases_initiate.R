@@ -59,9 +59,30 @@ db_frame <- tibble(
 # Frame upload database
 
 db_frame_upload <- tibble(
-  frame_upload_id = 1,
-  user            = 1,
-  date_upload     = date()
+  frame_upload_id    = 1,
+  user               = 1,
+  date_upload        = date(),
+  distance           = NA_character_,
+  pace_min_mile      = NA_real_,
+  pace_min_km        = NA_real_,
+  pace_km_hr         = NA_real_,
+  frames_air         = NA_real_, 
+  frames_ground      = NA_real_, 
+  frames_infront     = NA_real_,
+  frames_behind      = NA_real_,
+  frames_pos_flat    = NA_real_,
+  frames_pos_land    = NA_real_,
+  frames_pos_takeoff = NA_real_,
+  frames_land_flat   = NA_real_,
+  frames_land_heel   = NA_real_,
+  frames_land_toe    = NA_real_,
+  air_ratio          = NA_real_,
+  ground_ratio       = NA_real_,
+  front_behind_ratio = NA_real_,
+  steps              = NA_real_,
+  section_time       = NA_real_,
+  step_rate          = NA_real_,
+  step_length        = NA_real_
 )
 
 

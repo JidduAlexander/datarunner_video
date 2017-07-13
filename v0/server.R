@@ -434,7 +434,98 @@ shinyServer(function(input, output, session) {
     } else { NULL }
   })
   
-  # VIDEO STUFF -----
+  # NEW VIDEO ANALYSIS (NVA) -----
+  
+  rv_nva <- reactiveValues(
+    run_distance      = NULL, 
+    run_pace_min_mile = NULL,
+    run_pace_min_km   = NULL,
+    run_pace_km_hr    = NULL,
+    run_pace          = NULL,
+    report_toggle     = NULL
+  )
+  
+  # NVA: Run Info -----
+  
+  # Return pace ui when radioButton has been chosen
+  output$run_pace_ui <- renderUI({
+    if(length(input$run_pace) != 0) {
+      # Toggle to enable button
+      rv_nva$run_pace <- input$run_pace
+      
+      # return appropraite ui element
+      if(input$run_pace == 'mm:ss per mile') {
+        ui <- fluidRow(
+          column(width = 3, numericInput("run_pace_1", NULL, value = 8, 
+                                         min = 0, max = 59, step = 1)),
+          column(width = 1, div(style = "float:left;", p("min"))),
+          column(width = 3, numericInput("run_pace_2", NULL, value = 30, 
+                                         min = 0, max = 59, step = 1)),
+          column(width = 5, div(style = "float:left;", p("sec per mile")))
+        )
+      } else if(input$run_pace == 'mm:ss per km') {
+        ui <- fluidRow(
+          column(width = 3, numericInput("run_pace_1", NULL, value = 5, 
+                                         min = 0, max = 59, step = 1)),
+          column(width = 1, div(style = "float:left;", p("min"))),
+          column(width = 3, numericInput("run_pace_2", NULL, value = 30, 
+                                         min = 0, max = 59, step = 1)),
+          column(width = 5, div(style = "float:left;", p("sec per km")))
+        )
+      } else if(input$run_pace == 'km per hour') {
+        ui <- fluidRow(
+          column(width = 3, numericInput("run_pace_1", NULL, min = 0, value = 12, step = 0.1)),
+          column(width = 9, div(style = "float:left;", p("km per hour")))
+        )
+      }
+      
+      fluidRow(
+          column(width = 4, p(id = "input_text", "My pace/speed is")),
+          column(width = 8, ui)
+      )
+                 
+    } else { NULL }
+  })
+  
+  # Disable next button
+  observe({
+    if(is.null(rv_nva$run_pace)) {
+      disable("video_analysis_next_1")
+    } else {
+      enable("video_analysis_next_1")
+    }
+  })
+  
+  observeEvent(input$video_analysis_next_1, {
+    
+    # Store data in reactivevalue till updated in database with other values in reporting step.
+    
+    # distance
+    rv_nva$run_distance <- input$run_distance
+    
+    # pace
+    if(input$run_pace == "mm:ss per mile") {
+      run_pace_min_mile <- input$run_pace_1 + (input$run_pace_2 / 60)
+      run_pace_min_km   <- run_pace_min_mile / 1.60934
+      run_pace_km_hr    <- 60 / run_pace_min_km
+    } else if(input$run_pace == "mm:ss per km") {
+      run_pace_min_km   <- input$run_pace_1 + (input$run_pace_2 / 60)
+      run_pace_min_mile <- run_pace_min_km * 1.60934
+      run_pace_km_hr    <- 60 / run_pace_min_km
+    } else if(input$run_pace == "km per hour") {
+      run_pace_km_hr    <- input$run_pace_1
+      run_pace_min_km   <- 60 / run_pace_km_hr
+      run_pace_min_mile <- run_pace_min_km * 1.60934
+    }
+    
+    rv_nva$run_pace_min_mile <- run_pace_min_mile
+    rv_nva$run_pace_min_km   <- run_pace_min_km
+    rv_nva$run_pace_km_hr    <- run_pace_km_hr
+    
+    updateTabItems(session, "tab_new_video_analysis", "Upload Video")
+  })
+  
+  # NVA: VIDEO STUFF -----
   
   # Reactive video variables
   rv_vid <- reactiveValues(
@@ -566,7 +657,7 @@ shinyServer(function(input, output, session) {
     js$speed0(1 / input$video_slow)
   })
   
-  # FRAME SELECTION -----
+  # NVA: FRAME SELECTION -----
   
   rv_frame <- reactiveValues(
     selection         = NULL,
@@ -659,7 +750,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  # FRAME ANALYSIS -----
+  # NVA: FRAME ANALYSIS -----
   
   output$frame_analysis_img <- renderUI({
     if(!is.null(rv_frame$selection)) {
@@ -727,15 +818,15 @@ shinyServer(function(input, output, session) {
     # Write the database
     source("R/write_data_reactive.R", local = TRUE)
     
-    # Reset radiobuttons
-    reset("left_air_ground")
-    reset("left_ground_pos")
-    reset("left_ground_land")
-    reset("left_ground_land_detail")
-    reset("right_air_ground")
-    reset("right_ground_pos")
-    reset("right_ground_land")
-    reset("right_ground_land_detail")
+    # # Reset radiobuttons
+    # reset("left_air_ground")
+    # reset("left_ground_pos")
+    # reset("left_ground_land")
+    # reset("left_ground_land_detail")
+    # reset("right_air_ground")
+    # reset("right_ground_pos")
+    # reset("right_ground_land")
+    # reset("right_ground_land_detail")
 
     if(rv_frame$current_frame_num != max(rv_frame$selection)) {
       # Current frame +1
@@ -743,8 +834,77 @@ shinyServer(function(input, output, session) {
     } else {
       # Maybe set all reactive value to NULL?
       rv_frame$current_frame_num <- rv_frame$selection[1]
+      
+      # Toggle to generate report
+      rv_nva$report_toggle <- TRUE
     }
   })
   
+  observeEvent(rv_nva$report_toggle, {
+    if(!is.null(rv_nva$report_toggle)) {
+      
+      # Read the database
+      source("R/read_data_reactive.R", local = TRUE)
+
+      # Summarise frames data
+      analysis <- rv_db$frame[rv_db$frame$frame_upload_id == rv_frame$frame_upload_id, ] %>% 
+        mutate(
+          step_left  = cumsum(c(1, if_else(left_air_ground == lag(left_air_ground), 0, 1)[-1])),
+          step_right = cumsum(c(1, if_else(right_air_ground == lag(right_air_ground), 0, 1)[-1]))
+        ) %>%
+        summarise(
+          num_frames         = n(),
+          frames_air         = sum(left_air_ground == "Air" & right_air_ground == "Air", na.rm = TRUE),
+          frames_ground      = num_frames - frames_air,
+          frames_infront     = sum(left_ground_pos == "In front" | right_ground_pos == "In front", na.rm = TRUE),
+          frames_behind      = sum(left_ground_pos == "Behind" | right_ground_pos == "Behind", na.rm = TRUE),
+          frames_pos_flat    = sum(left_ground_land == "Flat" | right_ground_land == "Flat", na.rm = TRUE),
+          frames_pos_land    = sum(left_ground_land == "Landing" | right_ground_land == "Landing", na.rm = TRUE),
+          frames_pos_takeoff = sum(left_ground_land == "Taking off" | right_ground_land == "Taking off", na.rm = TRUE),
+          frames_land_flat   = sum(left_ground_land_detail == "Flat" | right_ground_land_detail == "Flat", na.rm = TRUE),
+          frames_land_heel   = sum(left_ground_land_detail == "Heel land" | right_ground_land_detail == "Heel land", na.rm = TRUE),
+          frames_land_toe    = sum(left_ground_land_detail == "Toe land" | right_ground_land_detail == "Toe land", na.rm = TRUE),
+          steps              = (max(step_left) + max(step_right) - 1) / 2
+        ) %>%  
+        mutate(
+          air_ratio          = frames_air / num_frames,
+          ground_ratio       = frames_ground / num_frames,
+          front_behind_ratio = frames_infront / frames_behind,
+          section_time       = (num_frames / rv_vid$frame_rate_orig),
+          step_rate          = 60 * steps / section_time,
+          step_length        = (1000 * rv_nva$run_pace_km_hr / 60) / step_rate
+        ) %>% 
+        select(-num_frames)
+      
+      rv_db$frame_upload[rv_db$frame_upload$frame_upload_id == rv_frame$frame_upload_id, 
+                  c("distance", 
+                    "pace_min_mile", "pace_min_km", "pace_km_hr", 
+                    "frames_air", "frames_ground", 
+                    "frames_infront", "frames_behind", 
+                    "frames_pos_flat", "frames_pos_land", "frames_pos_takeoff", 
+                    "frames_land_flat", "frames_land_heel", "frames_land_toe", 
+                    "air_ratio", "ground_ratio", "front_behind_ratio", 
+                    "steps", "section_time", "step_rate", "step_length")] <- list(
+                      rv_nva$run_distance, 
+                      rv_nva$run_pace_min_mile, rv_nva$run_pace_min_km, rv_nva$run_pace_km_hr,
+                      analysis$frames_air, analysis$frames_ground, 
+                      analysis$frames_infront, analysis$frames_behind, 
+                      analysis$frames_pos_flat, analysis$frames_pos_land, analysis$frames_pos_takeoff, 
+                      analysis$frames_land_flat, analysis$frames_land_heel, analysis$frames_land_toe, 
+                      analysis$air_ratio, analysis$ground_ratio, analysis$front_behind_ratio, 
+                      analysis$steps, analysis$section_time, analysis$step_rate, analysis$step_length
+                    )
+      
+      # Write the database
+      source("R/write_data_reactive.R", local = TRUE)
+      
+      # Go to next tab
+      updateTabItems(session, "tab_new_video_analysis", "Report")
+    }
+  })
   
-})
+  # NVA: Report
+  
+  
+  
+}) # End server function

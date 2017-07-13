@@ -43,11 +43,13 @@ shinyUI(dashboardPage(
             # Run Info -----
             title = "Run info",
             div(
-              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
-              h3("About the run"),
-              p(paste0("You most likely have different running styles. You run a 400 meter different from a 
+              style = "width:70%; max-width:600px; margin: 0 auto;",
+              div(style = "text-align:center;",
+                  h3("About the run"),
+                  p(paste0("You most likely have different running styles. You run a 400 meter different from a 
                        10km or a marathon. In the next step you will upload a video for analysis. We'd 
-                       like to know what kind of run your video was for.")),
+                       like to know what kind of run your video was for."))
+              ),
               fluidRow(
                 column(width = 4, p(id = "input_text", "The way I run in the video is how I run")),
                 column(width = 8, selectInput("run_distance", NULL,
@@ -59,46 +61,15 @@ shinyUI(dashboardPage(
                 column(width = 8, 
                        radioButtons("run_pace", NULL,
                                     choices  = c("mm:ss per mile", "mm:ss per km", "km per hour"),
-                                    selected = "mm:ss per km"))
+                                    selected = character(0)))
               ),
-              fluidRow(
-                column(width = 4, p(id = "input_text", "My pace/speed is")),
-                column(
-                  width = 8, 
-                  conditionalPanel(
-                    "input.run_pace == 'mm:ss per mile'",
-                    fluidRow(
-                      column(width = 3, numericInput("run_pace_1", NULL, value = 8, 
-                                                     min = 0, max = 59, step = 1)),
-                      column(width = 1, div(style = "float:left;", p("min"))),
-                      column(width = 3, numericInput("run_pace_2", NULL, value = 30, 
-                                                     min = 0, max = 59, step = 1)),
-                      column(width = 5, div(style = "float:left;", p("sec per mile")))
-                    )
-                  ),
-                  conditionalPanel(
-                    "input.run_pace == 'mm:ss per km'", 
-                    fluidRow(
-                      column(width = 3, numericInput("run_pace_1", NULL, value = 5, 
-                                                     min = 0, max = 59, step = 1)),
-                      column(width = 1, div(style = "float:left;", p("min"))),
-                      column(width = 3, numericInput("run_pace_2", NULL, value = 30, 
-                                                     min = 0, max = 59, step = 1)),
-                      column(width = 5, div(style = "float:left;", p("sec per km")))
-                    )
-                  ),
-                  conditionalPanel(
-                    "input.run_pace == 'km per hour'",
-                    fluidRow(
-                      column(width = 3, numericInput("run_pace_1", NULL, min = 0, value = 12, step = 0.1)),
-                      column(width = 9, div(style = "float:left;", p("km per hour")))
-                    )
-                  )
-                )
-              ),
-              withBusyIndicatorUI(
-                actionButton("video_analysis_next_1", "Next",
-                             style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
+              uiOutput("run_pace_ui"),
+              div(style="margin: 0 auto; width:150px;",
+                  withBusyIndicatorUI(
+                    actionButton("video_analysis_next_1", "Next",
+                                 style = "color: #232323; background-color: #65ff00; 
+                                     border-color: #434343;"))
+              )
             )
           ),
           tabPanel(
@@ -462,7 +433,21 @@ shinyUI(dashboardPage(
           ),
           tabPanel(
             # Report -----
-            title = "Report"
+            title = "Report",
+            div(
+              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+              h3("Here is your report"),
+              p("Air percentage, Ground percentage, Landing, Step rate, Step length"),
+              p("Plots comparing to other people."),
+              p("Plot: Pace versus Air time coloured by distance."),
+              p("Plot: Pace versus Step Rate coloured by distance."),
+              p("Plot: Front behind ratio versus Air time coluored by distance."),
+              p("Plot: Front behind ratio versus Step rate coluored by distance."),
+              p("Plot: "),
+              p("Plot: "),
+              p("Plot: "),
+              p("Plot: ")
+            )
           )
         ),
         div(style = "height:200px;"),
