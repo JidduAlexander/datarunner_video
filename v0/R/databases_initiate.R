@@ -20,6 +20,7 @@ db_user_info <- tibble(
     runner_yob                     = 1986,
     runner_height                  = 190,
     runner_weight                  = 70,
+    runner_bmi                     = runner_weight / (runner_height / 100)^2,
     runner_sex                     = "Male",
     injuries_ankle                 = FALSE,
     injuries_knee                  = FALSE,
@@ -60,7 +61,7 @@ db_frame <- tibble(
 
 db_frame_upload <- tibble(
   frame_upload_id    = 1,
-  user               = 1,
+  user_id            = 1,
   date_upload        = date(),
   distance           = NA_character_,
   pace_min_mile      = NA_real_,
@@ -78,7 +79,8 @@ db_frame_upload <- tibble(
   frames_land_toe    = NA_real_,
   air_ratio          = NA_real_,
   ground_ratio       = NA_real_,
-  front_behind_ratio = NA_real_,
+  front_ratio        = NA_real_,
+  behind_ratio       = NA_real_,
   steps              = NA_real_,
   section_time       = NA_real_,
   step_rate          = NA_real_,

@@ -4,6 +4,7 @@ library(stringr)
 library(tidyverse)
 library(shinyjs)
 library(sodium)
+library(RColorBrewer)
 
 source("R/helpers.R")
 source("R/functions.R")
@@ -78,6 +79,9 @@ runner_types_of_training <- c("Just leave my house and jog",
                               "Treadmill")
 
 run_distances <- c("Up to 200m", "A 400m sprint", "About 1km", "3 to 5km", "5 to 12km", "12 to 30km", "Marathon distance", "50km+")
+
+run_distances_palette <-  brewer.pal(8, "Dark2")
+names(run_distances_palette) <- run_distances
 
 types_of_injuries <- c("Ankle", 
                        "Knee")

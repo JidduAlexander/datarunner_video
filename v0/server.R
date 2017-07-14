@@ -335,6 +335,7 @@ shinyServer(function(input, output, session) {
       runner_yob                     = as.numeric(input$runner_yob),
       runner_height                  = as.numeric(input$runner_height),
       runner_weight                  = as.numeric(input$runner_weight),
+      runner_bmi                     = runner_weight / (runner_height / 100)^2,
       runner_sex                     = as.character(input$runner_sex),
       # injuries
       injuries_ankle                 = types_of_injuries[1] %in% input$type_of_injuries,
@@ -437,15 +438,17 @@ shinyServer(function(input, output, session) {
   # NEW VIDEO ANALYSIS (NVA) -----
   
   rv_nva <- reactiveValues(
-    run_distance      = NULL, 
-    run_pace_min_mile = NULL,
-    run_pace_min_km   = NULL,
-    run_pace_km_hr    = NULL,
-    run_pace          = NULL,
-    report_toggle     = NULL
+    run_distance            = NULL, 
+    run_pace_min_mile       = NULL,
+    run_pace_min_km         = NULL,
+    run_pace_km_hr          = NULL,
+    run_pace                = NULL,
+    summary_analysis_toggle = NULL,
+    report_toggle           = TRUE, # NULL
+    report_data_kpi         = NULL
   )
   
-  # NVA: Run Info -----
+  # NVA: RUN INFO -----
   
   # Return pace ui when radioButton has been chosen
   output$run_pace_ui <- renderUI({
@@ -718,7 +721,7 @@ shinyServer(function(input, output, session) {
         
         new_frame_upload <- tibble(
           frame_upload_id = new_frame_upload_id,
-          user            = rv_user$user_id,
+          user_id         = rv_user$user_id,
           date_upload     = date()
         )
         
@@ -836,16 +839,16 @@ shinyServer(function(input, output, session) {
       rv_frame$current_frame_num <- rv_frame$selection[1]
       
       # Toggle to generate report
-      rv_nva$report_toggle <- TRUE
+      rv_nva$summary_analysis_toggle <- TRUE
     }
   })
   
-  observeEvent(rv_nva$report_toggle, {
-    if(!is.null(rv_nva$report_toggle)) {
+  observeEvent(rv_nva$summary_analysis_toggle, {
+    if(!is.null(rv_nva$summary_analysis_toggle)) {
       
       # Read the database
       source("R/read_data_reactive.R", local = TRUE)
-
+      
       # Summarise frames data
       analysis <- rv_db$frame[rv_db$frame$frame_upload_id == rv_frame$frame_upload_id, ] %>% 
         mutate(
@@ -867,14 +870,17 @@ shinyServer(function(input, output, session) {
           steps              = (max(step_left) + max(step_right) - 1) / 2
         ) %>%  
         mutate(
-          air_ratio          = frames_air / num_frames,
-          ground_ratio       = frames_ground / num_frames,
-          front_behind_ratio = frames_infront / frames_behind,
-          section_time       = (num_frames / rv_vid$frame_rate_orig),
-          step_rate          = 60 * steps / section_time,
-          step_length        = (1000 * rv_nva$run_pace_km_hr / 60) / step_rate
+          air_ratio    = frames_air / num_frames,
+          ground_ratio = frames_ground / num_frames,
+          front_ratio  = frames_infront / frames_ground,
+          behind_ratio = frames_behind / frames_ground,
+          section_time = (num_frames / rv_vid$frame_rate_orig),
+          step_rate    = 60 * steps / section_time,
+          step_length  = (1000 * rv_nva$run_pace_km_hr / 60) / step_rate
         ) %>% 
         select(-num_frames)
+      
+      x <- 5
       
       rv_db$frame_upload[rv_db$frame_upload$frame_upload_id == rv_frame$frame_upload_id, 
                   c("distance", 
@@ -883,7 +889,8 @@ shinyServer(function(input, output, session) {
                     "frames_infront", "frames_behind", 
                     "frames_pos_flat", "frames_pos_land", "frames_pos_takeoff", 
                     "frames_land_flat", "frames_land_heel", "frames_land_toe", 
-                    "air_ratio", "ground_ratio", "front_behind_ratio", 
+                    "air_ratio", "ground_ratio", 
+                    "front_ratio", "behind_ratio", 
                     "steps", "section_time", "step_rate", "step_length")] <- list(
                       rv_nva$run_distance, 
                       rv_nva$run_pace_min_mile, rv_nva$run_pace_min_km, rv_nva$run_pace_km_hr,
@@ -891,7 +898,8 @@ shinyServer(function(input, output, session) {
                       analysis$frames_infront, analysis$frames_behind, 
                       analysis$frames_pos_flat, analysis$frames_pos_land, analysis$frames_pos_takeoff, 
                       analysis$frames_land_flat, analysis$frames_land_heel, analysis$frames_land_toe, 
-                      analysis$air_ratio, analysis$ground_ratio, analysis$front_behind_ratio, 
+                      analysis$air_ratio, analysis$ground_ratio, 
+                      analysis$front_ratio, analysis$behind_ratio, 
                       analysis$steps, analysis$section_time, analysis$step_rate, analysis$step_length
                     )
       
@@ -903,8 +911,208 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # NVA: Report
+  # NVA: REPORT -----
   
+  output$report_step_ui <- renderUI({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Subset kpi data
+      rv_nva$report_data_kpi <- rv_db$frame_upload[rv_db$frame_upload$frame_upload_id == rv_frame$frame_upload_id, ] 
+      
+      # UI for KPI values
+      list(
+        fluidRow(
+            column(width = 6, 
+                   valueBoxOutput("box_air_ratio"), 
+                   tags$style("#box_air_ratio {width:98%;}")),
+            column(width = 6, 
+                   valueBoxOutput("box_ground_ratio"), 
+                   tags$style("#box_ground_ratio {width:98%;}"))),
+        fluidRow(
+            column(width = 6, 
+                   valueBoxOutput("box_behind_ratio"), 
+                   tags$style("#box_behind_ratio {width:98%;}")),
+            column(width = 6, 
+                   valueBoxOutput("box_front_ratio"), 
+                   tags$style("#box_front_ratio {width:98%;}"))),
+        fluidRow(
+            column(width = 6, 
+                   valueBoxOutput("box_step_rate"), 
+                   tags$style("#box_step_rate {width:98%;}")),
+            column(width = 6, 
+                   valueBoxOutput("box_step_length"), 
+                   tags$style("#box_step_length {width:98%;}")))
+      )
+    } else { NULL }
+  })
   
+  output$box_air_ratio <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$air_ratio * 100), "%"), "Air time", 
+        icon = icon("leaf"), color = "light-blue"
+      )
+    } else { NULL }
+  })
+  
+  output$box_ground_ratio <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$ground_ratio * 100), "%"), "Ground time", 
+        icon = icon("anchor"), color = "yellow"
+      )
+    } else { NULL }
+  })
+  
+  output$box_front_ratio <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$front_ratio * 100), "%"), "Foot in front", 
+        icon = icon("mail-forward"), color = "olive"
+      )
+    } else { NULL }
+  })
+  
+  output$box_behind_ratio <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$behind_ratio * 100), "%"), "Foot behind", 
+        icon = icon("mail-reply"), color = "red"
+      )
+    } else { NULL }
+  })
+  
+  output$box_step_rate <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$step_rate)), "Step Rate (steps/minute)", 
+        icon = icon("paw"), color = "green"
+      )
+    } else { NULL }
+  })
+  
+  output$box_step_length <- renderValueBox({
+    if(!is.null(rv_nva$report_toggle)) {
+      valueBox(
+        paste0(round(rv_nva$report_data_kpi$step_length, 2), "m"), "Step Length", 
+        icon = icon("arrows-h"), color = "navy"
+      )
+    } else { NULL }
+  })
+  
+  # REPORT PLOTS
+  
+  output$report_plot_1 <- renderPlot({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Air time versus speed coloured by distance
+      rv_db$frame_upload %>% 
+        transmute(`Speed (km/hr)`                   = pace_km_hr,
+                  `Air Ratio (percentage air time)` = 100 * air_ratio,
+                  Distance                          = factor(distance)) %>% 
+        na.omit %>% 
+        ggplot(aes(x = `Speed (km/hr)`, y = `Air Ratio (percentage air time)`, col = Distance)) + 
+          geom_point(alpha = 0.7) + 
+          theme_bw() + 
+          scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10), minor_breaks = seq(5, 95, 10)) +
+          scale_colour_manual(values = c("Your run" = "#e41a1c", run_distances_palette)) + 
+          geom_point(data = rv_nva$report_data_kpi, 
+                     aes(x = pace_km_hr, y = 100 * air_ratio, col = "Your run"),
+                     size = 2, alpha = 0.9)
+      
+    } else { NULL }
+  })
+  
+  output$report_plot_2 <- renderPlot({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Step rate versus speed coloured by distance
+      rv_db$frame_upload %>% 
+        transmute(`Speed (km/hr)`                = pace_km_hr,
+                  `Step Rate (steps per minute)` = step_rate,
+                  Distance                       = factor(distance)) %>% 
+        na.omit %>% 
+        ggplot(aes(x = `Speed (km/hr)`, y = `Step Rate (steps per minute)`, col = Distance)) + 
+          geom_point(alpha = 0.7) + 
+          theme_bw() + 
+          scale_colour_manual(values = c("Your run" = "#e41a1c", run_distances_palette)) + 
+          geom_point(data = rv_nva$report_data_kpi, 
+                     aes(x = pace_km_hr, y = step_rate, col = "Your run"),
+                     size = 2, alpha = 0.9)
+      
+    } else { NULL }
+  })
+  
+  output$report_plot_3 <- renderPlot({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Behind ratio versus Pace (speed) coloured by distance
+      rv_db$frame_upload %>% 
+        transmute(`Speed (km/hr)`                                           = pace_km_hr,
+                  `Percentage of time your ground foot is behind your body` = 100 * behind_ratio,
+                  Distance                                                  = factor(distance)) %>% 
+        na.omit %>% 
+        ggplot(aes(x   = `Speed (km/hr)`, 
+                   y   = `Percentage of time your ground foot is behind your body`, 
+                   col = Distance)) + 
+        geom_point(alpha = 0.7) + 
+        theme_bw() + 
+        scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10), minor_breaks = seq(5, 95, 10)) +
+        scale_colour_manual(values = c("Your run" = "#e41a1c", run_distances_palette)) + 
+        geom_point(data = rv_nva$report_data_kpi, 
+                   aes(x = pace_km_hr, y = 100 * behind_ratio, col = "Your run"),
+                   size = 2, alpha = 0.9)
+     
+    } else { NULL }
+  })
+  
+  output$report_plot_4 <- renderPlot({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Behind ratio versus step rate coloured by distance
+      rv_db$frame_upload%>% 
+        transmute(`Step Rate (steps per minute)`                            = step_rate,
+                  `Percentage of time your ground foot is behind your body` = 100 * behind_ratio,
+                  Distance                                                  = factor(distance)) %>% 
+        na.omit %>% 
+        ggplot(aes(x   = `Step Rate (steps per minute)`, 
+                   y   = `Percentage of time your ground foot is behind your body`, 
+                   col = Distance)) +
+        geom_point(alpha = 0.7) + 
+        scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10), minor_breaks = seq(5, 95, 10)) +
+        theme_bw() + 
+        scale_colour_manual(values = c("Your run" = "#e41a1c", run_distances_palette)) + 
+        geom_point(data = rv_nva$report_data_kpi, 
+                   aes(x = step_rate, y = 100 * behind_ratio, col = "Your run"),
+                   size = 2, alpha = 0.9)
+      
+    } else { NULL }
+  })
+  
+  output$report_plot_5 <- renderPlot({
+    if(!is.null(rv_nva$report_toggle)) {
+      # Step length versus BMI (body weight / height^2) coloured by injury
+      plot_data <- left_join(
+        select(rv_db$frame_upload, frame_upload_id, user_id, `Step Rate` = step_rate),
+        select(rv_db$user_info, user_id, BMI = runner_bmi, starts_with("injuries")),
+        by = "user_id"
+      ) 
+      inj_names <- names(plot_data[-1:-4])
+      plot_data[-1:-4] <- map2(plot_data[-1:-4], str_sub(inj_names, 10, -1),
+                               function(col, name) {
+                                 if_else(col, name, "")
+                               })
+      plot_data <- plot_data %>% 
+        unite_(inj_names, col = "Injury", sep = " & ") %>% 
+        mutate(Injury = factor(if_else(Injury == " & ", "None", Injury))) %>% 
+        na.omit
+      
+      ggplot(plot_data, aes(x = `Step Rate`, y = BMI, col = Injury)) +
+        geom_point(alpha = 0.7) + 
+        # labs(y = expression(BMI  - (kg/m[2]))) +
+        ylab(bquote('BMI (kg/m ' ^2~')')) + 
+        theme_bw() + 
+        scale_colour_brewer(palette = "Dark2") + 
+        geom_point(data = plot_data[plot_data$frame_upload_id == 2, ], #rv_frame$frame_upload_id, ], 
+                   aes(x = `Step Rate`, y = BMI, col = "Your run"),
+                   size = 2, alpha = 0.9)
+      
+    } else { NULL }
+  })
   
 }) # End server function

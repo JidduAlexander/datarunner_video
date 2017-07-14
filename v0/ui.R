@@ -21,6 +21,15 @@ shinyUI(dashboardPage(
       #input_text {
         float:right;
       }
+
+      #kpi_circle {
+        width: 100px;
+        height: 100px;
+        background: red;
+        -moz-border-radius: 50px;
+        -webkit-border-radius: 50px;
+        border-radius: 50px;
+      }
     '))),
     tabItems(
       tabItem(
@@ -436,17 +445,37 @@ shinyUI(dashboardPage(
             title = "Report",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
-              h3("Here is your report"),
-              p("Air percentage, Ground percentage, Landing, Step rate, Step length"),
-              p("Plots comparing to other people."),
-              p("Plot: Pace versus Air time coloured by distance."),
-              p("Plot: Pace versus Step Rate coloured by distance."),
-              p("Plot: Front behind ratio versus Air time coluored by distance."),
-              p("Plot: Front behind ratio versus Step rate coluored by distance."),
-              p("Plot: "),
-              p("Plot: "),
-              p("Plot: "),
-              p("Plot: ")
+              h3("The summary of your run"),
+              p("An overview of your run in numbers."),
+              uiOutput("report_step_ui"),
+              hr(style = "margin:40px 0px"),
+              h3("You with respect to the world"),
+              p("The following plots highlight your results with respect to everybody else."),
+              hr(style = "margin:40px 0px"),
+              h4("Pace (speed) versus Air time coloured by distance."),
+              p("Can you be fast if your feet are stuck to the ground? Do people who run fast 
+                (at their distance) spend a lot or a little time in the air? And you?"),
+              plotOutput("report_plot_1"),
+              hr(style = "margin:40px 0px"),
+              h4("Pace (speed) versus Step Rate coloured by distance."),
+              p("Is it faster to run many of few steps? And does that change between short and 
+                long distances? Do you run with a good step rate for your distance?"),
+              plotOutput("report_plot_2"),
+              hr(style = "margin:40px 0px"),
+              h4("Pace (speed) versus Behind ratio coloured by distance."),
+              p("You 'behind ratio) increases when you land your feet less far in front of you? 
+                Are you landing your feet too far or too close for a good speed?"),
+              plotOutput("report_plot_3"),
+              hr(style = "margin:40px 0px"),
+              h4("# Behind ratio versus step rate coloured by distance."),
+              p("Does the behind ratio increase with increased step rate? In that case would 
+                increasing your step rate increase your behind ratio"),
+              plotOutput("report_plot_4"),
+              hr(style = "margin:40px 0px"),
+              h4("Step length versus BMI (body weight / height^2) coloured by injury."),
+              p("Do high BMI and low step rate increase the changes of injury? Can you change 
+                your step rate to decreases the changes of getting an injury at your BMI?"),
+              plotOutput("report_plot_5")
             )
           )
         ),
