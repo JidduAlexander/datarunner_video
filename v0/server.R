@@ -379,27 +379,60 @@ shinyServer(function(input, output, session) {
   output$profile_general_ui <- renderUI({
     ui <- NULL
     if(!is.null(rv_user$user_id)) {
+      
       ui <- list(
-        div(title = "New video analysis",
-            style = "width:50%; float:left;",
-                actionButton("new_video_analysis_button",
-                             label = span(img(src="new_video_analysis.png", style = "width:100%;")))),
-        div(title = "Load external data", 
-            style = "width:50%; float:right;",
-            actionButton("load_external_data",
-                         label = span(img(src="matrix_data.png", style = "width:100%;"))))
+        div(
+          style = "text-align:center; width:70%; margin: 0 auto;",
+          h3("Would you like to do something data-like?"),
+          p("With the video analysis you can compare your running style to everybody else's. This 
+          is about building a large database of running styles and how they are related to 
+          performance and injury."),
+          p("Loading external data is not yet a feature. But the idea is that it allows a much more 
+          personalised and advanced analysis compared to what external parties offer.")
+        ),
+        div(
+          style = "text-align:center; width:80%; max-width:900px; margin: 0 auto;",
+          div(title = "New video analysis",
+              style = "width:50%; float:left;",
+              actionButton("new_video_analysis_button",
+                           label = span(img(src="new_video_analysis.png", style = "width:100%;")))),
+          div(title = "Load external data", 
+              style = "width:50%; float:right;",
+              actionButton("load_external_data",
+                           label = span(img(src="matrix_data.png", style = "width:100%;"))))
+        )
       )
+      
+      frame_uploads <- filter(rv_db$frame_upload, user_id == rv_user$user_id)
+      if(length(frame_uploads) != 0) {
+        
+        output$frame_uploads_table <- renderDataTable({
+          transmute(frame_uploads, 
+                    Distance              = distance, 
+                    `Pace (mm:ss per km)` = paste0(
+                      str_pad(pace_min_km %/% 1, width = 2, side = "left", pad = "0"), ":",
+                      str_pad( round(pace_min_km %% 1 * 60), width = 2, side = "left", pad = "0")),
+                    `Speed (km/hr)`       = pace_km_hr,
+                    `Air time`            = paste0(round(air_ratio * 100), "%"),
+                    `Behind time`         = paste0(round(behind_ratio * 100), "%"),
+                    `Step Rate`           = round(step_rate))
+        })
+        
+        ui <- c(
+          ui, 
+          list(div(
+            style = "text-align:center; width:70%; margin: 0 auto;",
+            p(" "),
+            hr(style = "margin:80px 0px"),
+            h3("A summary of your runs"),
+            dataTableOutput("frame_uploads_table"),
+            hr(style = "margin:40px 0px")
+          ))
+        )
+      }
     }
     
-    div(
-      style = "text-align:center; width:80%; max-width:900px; margin: 0 auto;",
-      ui
-    )
-  })
-  
-  # Go to tab when image is clicked
-  observeEvent(input$new_video_analysis_button, {
-    updateTabItems(session, "tab_profile", "profile_video_analysis")
+    ui
   })
   
   # MENUS -----
@@ -428,9 +461,9 @@ shinyServer(function(input, output, session) {
       sidebarMenu(
         id = "tab_profile", 
         menuItem("Profile",
-                 menuSubItem("General", tabName = "profile_general"),
-                 menuSubItem("Runs", tabName = "profile_runs"),
-                 menuSubItem("Video Analysis", tabName = "profile_video_analysis"))
+                 menuSubItem("Board", tabName = "profile_general"),
+                 menuSubItem("Add New Video Analysis", tabName = "profile_video_analysis"),
+                 menuSubItem("Load External Data", tabName = "load_external_data"))
       )
     } else { NULL }
   })
@@ -447,6 +480,28 @@ shinyServer(function(input, output, session) {
     report_toggle           = TRUE, # NULL
     report_data_kpi         = NULL
   )
+  
+  # Go to new analysis tab when image is clicked
+  observeEvent(input$new_video_analysis_button, {
+    updateTabItems(session, "tab_profile", "profile_video_analysis")
+    
+    # Disable all tabs, only allow buttons to go to next
+    toggleClass(condition = TRUE,
+                class = "disabled",
+                selector = "#tab_new_video_analysis li a[data-value=run_info]")
+    toggleClass(condition = TRUE,
+                class = "disabled",
+                selector = "#tab_new_video_analysis li a[data-value=upload_video]")
+    toggleClass(condition = TRUE,
+                class = "disabled",
+                selector = "#tab_new_video_analysis li a[data-value=select_frames]")
+    toggleClass(condition = TRUE,
+                class = "disabled",
+                selector = "#tab_new_video_analysis li a[data-value=analyse_frames]")
+    toggleClass(condition = TRUE,
+                class = "disabled",
+                selector = "#tab_new_video_analysis li a[data-value=report]")
+  })
   
   # NVA: RUN INFO -----
   
@@ -525,7 +580,7 @@ shinyServer(function(input, output, session) {
     rv_nva$run_pace_min_km   <- run_pace_min_km
     rv_nva$run_pace_km_hr    <- run_pace_km_hr
     
-    updateTabItems(session, "tab_new_video_analysis", "Upload Video")
+    updateTabItems(session, "tab_new_video_analysis", "upload_video")
   })
   
   # NVA: VIDEO STUFF -----
@@ -599,7 +654,7 @@ shinyServer(function(input, output, session) {
     rv_vid$loaded <- TRUE
     
     # Go to next tab
-    updateTabItems(session, "tab_new_video_analysis", "Select frames")
+    updateTabItems(session, "tab_new_video_analysis", "select_frames")
   })
   
   # Render video
@@ -748,7 +803,7 @@ shinyServer(function(input, output, session) {
         source("R/write_data_reactive.R", local = TRUE)
         
         # Go to next tab
-        updateTabItems(session, "tab_new_video_analysis", "Analyse frames")
+        updateTabItems(session, "tab_new_video_analysis", "analyse_frames")
       })
     })
   })
@@ -907,7 +962,7 @@ shinyServer(function(input, output, session) {
       source("R/write_data_reactive.R", local = TRUE)
       
       # Go to next tab
-      updateTabItems(session, "tab_new_video_analysis", "Report")
+      updateTabItems(session, "tab_new_video_analysis", "report")
     }
   })
   

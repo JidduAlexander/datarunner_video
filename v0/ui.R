@@ -17,20 +17,18 @@ shinyUI(dashboardPage(
     useShinyjs(),
     extendShinyjs(text = jsCode1),
     extendShinyjs(text = jsCode2),
+    extendShinyjs(text = jsCode3, functions = "init"),
     tags$head(tags$style(HTML('
       #input_text {
         float:right;
       }
 
-      #kpi_circle {
-        width: 100px;
-        height: 100px;
-        background: red;
-        -moz-border-radius: 50px;
-        -webkit-border-radius: 50px;
-        border-radius: 50px;
+      .disabled {
+        cursor: default !important;
+        color: black !important;
       }
     '))),
+    # Start tabitems -----
     tabItems(
       tabItem(
         tabName = "home",
@@ -43,14 +41,16 @@ shinyUI(dashboardPage(
       tabItem(tabName = "profile_general",
               uiOutput("profile_general_ui")
       ),
+      # Add New Video Analysis -----
       tabItem(
         tabName = "profile_video_analysis",
         tabBox(
           id = "tab_new_video_analysis",
           width = 12,
           tabPanel(
-            # Run Info -----
-            title = "Run info",
+            # RUN INFO -----
+            title = "Run Info",
+            value = "run_info",
             div(
               style = "width:70%; max-width:600px; margin: 0 auto;",
               div(style = "text-align:center;",
@@ -82,8 +82,9 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
-            # Upload Video -----
+            # UPLOAD VIDEO -----
             title = "Upload Video",
+            value = "upload_video",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               h3("Upload a video"),
@@ -112,8 +113,9 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
-            # Select Frames -----
-            title = "Select frames",
+            # SELECT FRAMES -----
+            title = "Select Frames",
+            value = "select_frames",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               # INSPECT VIDEO -----
@@ -165,8 +167,9 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
-            # 5. ANALYSE FRAMES -----
-            title = "Analyse frames",
+            # ANALYSE FRAMES -----
+            title = "Analyse Frames",
+            value = "analyse_frames",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               h3("Analyse, frame by frame"),
@@ -441,8 +444,9 @@ shinyUI(dashboardPage(
             )
           ),
           tabPanel(
-            # Report -----
+            # REPORT -----
             title = "Report",
+            value = "report",
             div(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               h3("The summary of your run"),
@@ -467,7 +471,7 @@ shinyUI(dashboardPage(
                 Are you landing your feet too far or too close for a good speed?"),
               plotOutput("report_plot_3"),
               hr(style = "margin:40px 0px"),
-              h4("# Behind ratio versus step rate coloured by distance."),
+              h4("Behind ratio versus step rate coloured by distance."),
               p("Does the behind ratio increase with increased step rate? In that case would 
                 increasing your step rate increase your behind ratio"),
               plotOutput("report_plot_4"),
@@ -481,7 +485,13 @@ shinyUI(dashboardPage(
         ),
         div(style = "height:200px;"),
         p(" - ")
+      ),
+      # Load External Data -----
+      tabItem(
+        tabName = "load_external_data",
+        p("Coming soon! Well, maybe not so soon...")
       )
+    # End tabitems -----
     ),
     # Footer -----
     div(style = "width:100%; height:50px; background-color:#232323; position:fixed; bottom:0;

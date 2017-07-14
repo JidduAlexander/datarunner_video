@@ -34,12 +34,21 @@ db_frame_upload_mtime  <- file.mtime("input/db/db_frame_upload.Rds")
 # For each frame say air/ground, before after hip
 
 # Javascript code for video 
-jsCode1 <- "shinyjs.speed0 = function(x){
-  var myVid=document.getElementById('v0');
-  myVid.playbackRate = x;
-  $('#pbrate').html(x);
-}"
+jsCode1 <- "
+  shinyjs.speed0 = function(x){
+    var myVid=document.getElementById('v0');
+    myVid.playbackRate = x;
+    $('#pbrate').html(x);
+  }"
 jsCode2 <- "shinyjs.vid0 = function(value){document.getElementById('v0').currentTime = value;}"
+
+jsCode3 <- 'shinyjs.init = function() {
+  $(".nav").on("click", ".disabled", function (e) {
+    e.preventDefault();
+    return false;
+  });
+}
+'
 
 # Upload limits
 shiny_file_size <- 300 # in MB
