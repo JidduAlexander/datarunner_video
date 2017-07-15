@@ -99,6 +99,16 @@ influences_of_injuries <- c("Pain when running, but continue running",
                             "Stop (cut short) each run when I feel pain",
                             "Stop running for period of time")
 
+injury_name <-  c("Ankle", "Knee", "Hamstring", "Shins", "Inflamation", 
+                  "Iliotibial Band Syndrome", "Sciatica and Piriformis Syndrome", 
+                  "Blackened toenails", "Morton's Neuroma", "Gluteus Medius/IT Band", 
+                  "Plantar Fasciitis")
+
+# BLOGS TO POSSIBLY CONTACT: 
+# - ncrunnerdude.blogspot.de
+# - http://flowingdata.com/2014/02/05/where-people-run/ (route visualisations)
+
+
 # Reusable chunks
 
 # fluidRow(

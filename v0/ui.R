@@ -21,6 +21,7 @@ shinyUI(dashboardPage(
     tags$head(tags$style(HTML('
       #input_text {
         float:right;
+        font-weight:bold;
       }
 
       .disabled {

@@ -143,8 +143,7 @@ shinyServer(function(input, output, session) {
           hr(),
           h3("Let's go!", style = "padding-bottom:20px;"),
           fluidRow(
-            column(width = 5, p("Login in the side panel")),
-            column(width = 1, p("or")),
+            column(width = 6, p("Login in the side panel")),
             column(width = 6, withBusyIndicatorUI(actionButton("create_account_2", "Create Account",
                                                                class = "btn-primary")))
           )
@@ -159,33 +158,42 @@ shinyServer(function(input, output, session) {
   
   # PAGE - CREATE ACCOUNT -----
   
+  # Store injuries if more are created
+  rv_create_account <- reactiveValues(
+    injuries  = NULL,
+    fill_form = NULL
+  )
+  
   # UI flipping through pages
   output$create_account_ui <- renderUI({
     ui <- NULL
     if(!is.null(isolate(rv_user$user_id))) {
       ui <- p("Please log out first.")
     } else {
-      ui <- div(
-        style = "width:70%; max-width:600px; margin: 0 auto;",
+      ui <- list(
         div(
-          style = "text-align:center;",
-          h3("Login details"),
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+          max-width:700px; margin:10px auto; padding:15px;",
+          div(style = "text-align:center;", h3("Account details")),
           fluidRow(
-            column(width = 4, p(id = "input_text", "* User name")),
-            column(width = 8, textInput("create_account_name", NULL, value = ""))
+            column(width = 6, p(id = "input_text", "* User name")),
+            column(width = 6, textInput("create_account_name", NULL, value = ""))
           ),
           fluidRow(
-            column(width = 4, p(id = "input_text", "Email")),
-            column(width = 8, textInput("create_account_email", NULL, value = ""))
+            column(width = 6, p(id = "input_text", "Email")),
+            column(width = 6, textInput("create_account_email", NULL, value = ""))
           ),
           fluidRow(
-            column(width = 4, p(id = "input_text", "* Password")),
-            column(width = 8,  passwordInput("create_account_password1", NULL))
+            column(width = 6, p(id = "input_text", "* Password")),
+            column(width = 6,  passwordInput("create_account_password1", NULL))
           ),
           fluidRow(
-            column(width = 4, p(id = "input_text", "* Retype Password")),
-            column(width = 8, passwordInput("create_account_password2", NULL))
-          ),
+            column(width = 6, p(id = "input_text", "* Retype Password")),
+            column(width = 6, passwordInput("create_account_password2", NULL))
+          )
+        ),
+        div(
+          style = "width:70%; max-width:600px; margin: 0 auto; text-align:center;",
           p("You are at at the forefront of running analysis curiousity. Your awesomeness 
             has the fortunate advantage that you can influence the future of this 
             application. We welcome your feedback and directions and we may approach you 
@@ -194,86 +202,195 @@ shinyServer(function(input, output, session) {
           h3("A little more about you"),
           p(paste0("Depending on you experience and body you probably have different 
                  strengths and weaknesses. To take this into the analysis please 
-                 fill out the following form.")),
-          p("GENERAL")
+                 fill out the following form."))
+        ), 
+        div(
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+                  max-width:700px; margin:10px auto; padding:15px;",
+          div(style = "text-align:center;", h3("General")),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "Year of birth")),
+            column(width = 6, selectInput("runner_yob", NULL, 
+                                          choices  = 1900:as.numeric(str_sub(date(), -4, -1)), 
+                                          selected = "1990"))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "Height in cm")),
+            column(width = 6, numericInput("runner_height", NULL, 
+                                           min = 50, value = 175, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "Weight in kg")),
+            column(width = 6, numericInput("runner_weight", NULL, 
+                                           min = 0, value = 65, step = 0.5))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "Sex")),
+            column(width = 6, radioButtons("runner_sex", NULL, 
+                                           choices  = c("Male", "Female", "Other"),
+                                           selected = "Male"))
+          )
         ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Year of birth")),
-          column(width = 8, selectInput("runner_yob", NULL, 
-                                        choices  = 1900:as.numeric(str_sub(date(), -4, -1)), 
-                                        selected = "1990"))
+        div(
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+          max-width:700px; margin:10px auto; padding:15px;",
+          div(style = "text-align:center;", h3("Running")),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "What's your aim?")),
+            column(width = 6, checkboxGroupInput("runner_aim", NULL,
+                                                 choices  = runner_aims))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "How long have you been running?")),
+            column(width = 6, radioButtons("runner_experience", NULL,
+                                           choices  = runner_experiences, 
+                                           selected = runner_experiences[6]))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "How many runs (sessions) do you do per week?")),
+            column(width = 6, numericInput("runner_runs_per_week", NULL, 
+                                           min = 0, value = 3, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "What is the average weekly distance (in km) that you run?")),
+            column(width = 6, numericInput("runner_average_weekly_distance", NULL, 
+                                           min = 0, value = 25, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, p(id = "input_text", "What types of training do you do?")),
+            column(width = 6, checkboxGroupInput("runner_type_of_training", NULL, 
+                                                 choices  = runner_types_of_training))
+          )
         ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Height in cm")),
-          column(width = 8, numericInput("runner_height", NULL, 
-                                         min = 50, value = 175, step = 1))
+        div(
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+          max-width:700px; margin:10px auto; padding:15px;",
+          div(style = "text-align:center;", h3("Other training")),
+          fluidRow(
+            column(width = 6, 
+                   p(id = "input_text", "How often per week do you do strength training (gym) ?")),
+            column(width = 6, numericInput("training_gym_x", NULL, 
+                                           value = 1, min = 0, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, 
+                   p(id = "input_text", "How often per week do you do cross fit training?")),
+            column(width = 6, numericInput("training_crossfit_x", NULL, 
+                                           value = 1, min = 0, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, 
+                   p(id = "input_text", "How many minutes do you stretch before every run?")),
+            column(width = 6, numericInput("training_stretch_before", NULL, 
+                                           value = 0, min = 0, step = 1))
+          ),
+          fluidRow(
+            column(width = 6, 
+                   p(id = "input_text", "How many minutes do you stretch after every run?")),
+            column(width = 6, numericInput("training_stretch_after", NULL, 
+                                           value = 0, min = 0, step = 1))
+          )
         ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Weight in kg")),
-          column(width = 8, numericInput("runner_weight", NULL, 
-                                         min = 0, value = 65, step = 0.5))
+        div(
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+          max-width:700px; margin:10px auto; padding:15px;",
+          div(style = "text-align:center;", h3("Injuries")),
+          uiOutput("add_injuries_ui")
         ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "Sex")),
-          column(width = 8, radioButtons("runner_sex", NULL, 
-                                         choices  = c("Male", "Female", "Other"),
-                                         selected = "Male"))
-        ),
-        div(style = "text-align:center;", p("INJURIES")),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "What types of injuries do you deal with?")),
-          column(width = 8, checkboxGroupInput("type_of_injuries", NULL, 
-                                               choices  = types_of_injuries))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "How do injuries influence your running?")),
-          column(width = 8, checkboxGroupInput("influence_of_injuries", NULL, 
-                                               choices  = influences_of_injuries))
-        ),
-        div(style = "text-align:center;", p("RUNNING")),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "What's your aim?")),
-          column(width = 8, checkboxGroupInput("runner_aim", NULL,
-                                               choices  = runner_aims))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "How long have you been running?")),
-          column(width = 8, radioButtons("runner_experience", NULL,
-                                         choices  = runner_experiences, 
-                                         selected = runner_experiences[6]))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "How many runs (sessions) do you do per week?")),
-          column(width = 8, numericInput("runner_runs_per_week", NULL, 
-                                         min = 0, value = 3, step = 1))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "What is the average weekly distance (in km) that you run?")),
-          column(width = 8, numericInput("runner_average_weekly_distance", NULL, 
-                                         min = 0, value = 25, step = 1))
-        ),
-        fluidRow(
-          column(width = 4, p(id = "input_text", "What types of training do you do?")),
-          column(width = 8, checkboxGroupInput("runner_type_of_training", NULL, 
-                                               choices  = runner_types_of_training))
-        ),
-        fluidRow(
-          column(width = 4, 
-                 p(id = "input_text", 
-                   "I didn't (want to) fill out the form. (If you didn't actually fill the form we'd 
-                   like to know it such that we know to ignore the data)")),
-          column(width = 8, checkboxInput("input_form_correct", NULL, value = FALSE))
-        ),
-        div(style = "text-align:center;",
-            withBusyIndicatorUI(
-              actionButton("create_account_button", "Create Account",
-                           style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
+        div(
+          style = "background-color:white; border:solid 1px #232323; width:80%; 
+          max-width:700px; margin:20px auto; padding:15px; text-align:center;",
+          div(style = "font-weight:bold;", p("Did you fill the complete form?")),
+          radioButtons("input_form_correct", NULL, 
+                       inline   = TRUE,
+                       choices  = c("Yes" = TRUE, "No" = FALSE),
+                       selected = character(0)),
+          p("If you didn't actually fill the form we'd like to know it such that 
+            we know to ignore the data in your analysis"),
+          withBusyIndicatorUI(
+            actionButton("create_account_button", "Create Account",
+                         style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
         ),
         div(style = "height:200px")
       )
     }
     ui
   }) 
+  
+  # Update when radiobutton is clicked
+  observeEvent(input$input_form_correct, {
+    rv_create_account$fill_form <- input$input_form_correct
+  })
+  
+  # Disable add account button
+  observe({
+    if(!is.null(input$create_account_name)) {
+      if(is.null(rv_create_account$fill_form)){
+        disable("create_account_button")
+      } else {
+        enable("create_account_button")
+      }
+    }
+  })
+  
+  # Render the injuries part seperate to add more injuries
+  output$add_injuries_ui <- renderUI({
+    list(
+      div(style = "text-align:center;", 
+          p("Use the selection inputs and button to add injuries.")),
+      div(
+        style = "border:solid 1px grey; margin: 3px; padding: 5px; background-color:#e4f8ff;",
+        fluidRow(
+          column(width = 4, selectInput("injury_name", "Injury", 
+                                        choices  = injury_name,
+                                        selected = injury_name[1])),
+          column(width = 2, selectInput("injury_run_type", "Comes up in", 
+                                        choices  = c("Both", "Sprint", "Jog"), 
+                                        selected = "Both")),
+          column(width = 6, selectInput("injury_affect", "How does it affect you?",
+                                        choices  = influences_of_injuries,
+                                        selected = influences_of_injuries[1]))
+        ),
+        div(style = "text-align:right;", actionButton("injury_add_more", "Add injury"))
+      ),
+      
+      div(style = "text-align:center;", 
+          h4("Your injuries:"),
+          fluidRow(
+            column(width = 4, p(style = "font-weight:bold;", "Injury")),
+            column(width = 2, p(style = "font-weight:bold;", "During")),
+            column(width = 6, p(style = "font-weight:bold;", "Affect"))
+          ),
+          if(!is.null(rv_create_account$injuries)) {
+            pmap(list(rv_create_account$injuries$name,
+                      rv_create_account$injuries$run_type,
+                      rv_create_account$injuries$affect),
+                 function(x, y, z) {
+                   fluidRow(
+                     column(width = 4, p(paste0(x))),
+                     column(width = 2, p(paste0(y))),
+                     column(width = 6, p(paste0(z)))
+                   )
+                 })
+          } else {
+            div(style = "color:red;", p("You haven't added any injuries."))
+          }
+      )
+    )
+  })
+  
+  # Action button add injury response
+  observeEvent(input$injury_add_more, {
+    rv_create_account$injuries <- bind_rows(
+      rv_create_account$injuries,
+      tibble(
+        name     = input$injury_name,
+        run_type = input$injury_run_type,
+        affect   = input$injury_affect
+      )
+    )
+  })
+  
   
   observeEvent(input$create_account_button, {
     
@@ -366,6 +483,9 @@ shinyServer(function(input, output, session) {
     # Write the database
     source("R/write_data_reactive.R", local = TRUE)
     
+    # Reset injuries
+    rv_create_account$injuries <- NULL
+    
     # Login
     rv_user$user_id   <- new_user$user_id
     rv_user$user_name <- new_user$name
@@ -399,7 +519,9 @@ shinyServer(function(input, output, session) {
           div(title = "Load external data", 
               style = "width:50%; float:right;",
               actionButton("load_external_data",
-                           label = span(img(src="matrix_data.png", style = "width:100%;"))))
+                           label = span(img(src="matrix_data.png", style = "width:100%;")))),
+          # p("(tabs can be found in the side panel)")
+          p("-")
         )
       )
       
@@ -421,12 +543,19 @@ shinyServer(function(input, output, session) {
         ui <- c(
           ui, 
           list(div(
-            style = "text-align:center; width:70%; margin: 0 auto;",
-            p(" "),
-            hr(style = "margin:80px 0px"),
-            h3("A summary of your runs"),
-            dataTableOutput("frame_uploads_table"),
-            hr(style = "margin:40px 0px")
+            style = "text-align:center; width:70%; margin: auto;",
+            hr(style = "margin:20px 0px"),
+            h3("A summary table of your video analyses"),
+            p("The following table contains one row of information for each video analysis you did."),
+            div(
+              style = "background-color:white; margin:20px 0px;",
+              dataTableOutput("frame_uploads_table")
+            ),
+            hr(style = "margin:40px 0px"),
+            h3("Interactive plotting environment"),
+            p("Use the controls two filter and plot what you like. You are totally free to perform your 
+              own amazing analysis."),
+            p("Controls: x, y, colour, facet x, facet y, highlight mine, ")
           ))
         )
       }
