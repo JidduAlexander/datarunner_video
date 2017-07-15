@@ -9,13 +9,15 @@ shinyServer(function(input, output, session) {
   rv_db <- reactiveValues(
     user         = db_user,
     user_info    = db_user_info,
+    injury       = db_injury,
     frame        = db_frame,
     frame_upload = db_frame_upload,
     # Modification times to check reloading
-    user_mtime          = db_user_mtime,
-    user_info_mtime     = db_user_info_mtime,
-    frame_mtime         = db_frame_mtime,
-    frame_upload_mtime  = db_frame_upload_mtime
+    user_mtime         = db_user_mtime,
+    user_info_mtime    = db_user_info_mtime,
+    injury_mtime       = db_injury_mtime,
+    frame_mtime        = db_frame_mtime,
+    frame_upload_mtime = db_frame_upload_mtime
   )
     
   # # Read the database
@@ -160,11 +162,39 @@ shinyServer(function(input, output, session) {
   
   # Store injuries if more are created
   rv_create_account <- reactiveValues(
-    injuries  = NULL,
-    fill_form = NULL
+    injuries      = NULL,
+    fill_form     = NULL, # support for actionbutton disable
+    error_account = NULL, # support for actionbutton disable
+    error_general = NULL, # support for actionbutton disable
+    error_running = NULL, # support for actionbutton disable
+    error_other   = NULL  # support for actionbutton disable
   )
   
-  # UI flipping through pages
+  # CREATE ACCOUNT: DISABLE ACTION BUTTON -----
+  
+  # Update when radiobutton is clicked
+  observeEvent(input$input_form_correct, {
+    rv_create_account$fill_form <- input$input_form_correct
+  })
+  
+  # Disable add account button
+  observe({
+    if(!is.null(input$create_account_name)) {
+      if(is.null(rv_create_account$fill_form) | 
+         !is.null(rv_create_account$error_account) | 
+         !is.null(rv_create_account$error_general) | 
+         !is.null(rv_create_account$error_running) | 
+         !is.null(rv_create_account$error_other)){
+        disable("create_account_button")
+      } else {
+        enable("create_account_button")
+      }
+    }
+  })
+  
+  # CREATE ACCOUNT: MAIN UI PAGE -----
+  
+  # UI for the page 
   output$create_account_ui <- renderUI({
     ui <- NULL
     if(!is.null(isolate(rv_user$user_id))) {
@@ -176,21 +206,22 @@ shinyServer(function(input, output, session) {
           max-width:700px; margin:10px auto; padding:15px;",
           div(style = "text-align:center;", h3("Account details")),
           fluidRow(
-            column(width = 6, p(id = "input_text", "* User name")),
-            column(width = 6, textInput("create_account_name", NULL, value = ""))
+            column(width = 4, p(id = "input_text", "* User name")),
+            column(width = 8, textInput("create_account_name", NULL, value = ""))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "Email")),
-            column(width = 6, textInput("create_account_email", NULL, value = ""))
+            column(width = 4, p(id = "input_text", "Email")),
+            column(width = 8, textInput("create_account_email", NULL, value = ""))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "* Password")),
-            column(width = 6,  passwordInput("create_account_password1", NULL))
+            column(width = 4, p(id = "input_text", "* Password")),
+            column(width = 8,  passwordInput("create_account_password1", NULL))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "* Retype Password")),
-            column(width = 6, passwordInput("create_account_password2", NULL))
-          )
+            column(width = 4, p(id = "input_text", "* Retype Password")),
+            column(width = 8, passwordInput("create_account_password2", NULL))
+          ),
+          div(style = "text-align:center;color:#771111;", textOutput("error_account_msg"))
         ),
         div(
           style = "width:70%; max-width:600px; margin: 0 auto; text-align:center;",
@@ -209,87 +240,90 @@ shinyServer(function(input, output, session) {
                   max-width:700px; margin:10px auto; padding:15px;",
           div(style = "text-align:center;", h3("General")),
           fluidRow(
-            column(width = 6, p(id = "input_text", "Year of birth")),
-            column(width = 6, selectInput("runner_yob", NULL, 
+            column(width = 4, p(id = "input_text", "Year of birth")),
+            column(width = 8, selectInput("runner_yob", NULL, 
                                           choices  = 1900:as.numeric(str_sub(date(), -4, -1)), 
                                           selected = "1990"))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "Height in cm")),
-            column(width = 6, numericInput("runner_height", NULL, 
+            column(width = 4, p(id = "input_text", "Height in cm")),
+            column(width = 8, numericInput("runner_height", NULL, 
                                            min = 50, value = 175, step = 1))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "Weight in kg")),
-            column(width = 6, numericInput("runner_weight", NULL, 
+            column(width = 4, p(id = "input_text", "Weight in kg")),
+            column(width = 8, numericInput("runner_weight", NULL, 
                                            min = 0, value = 65, step = 0.5))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "Sex")),
-            column(width = 6, radioButtons("runner_sex", NULL, 
+            column(width = 4, p(id = "input_text", "Sex")),
+            column(width = 8, radioButtons("runner_sex", NULL, 
                                            choices  = c("Male", "Female", "Other"),
                                            selected = "Male"))
-          )
+          ),
+          div(style = "text-align:center;color:#771111;", textOutput("error_general_msg"))
         ),
         div(
           style = "background-color:white; border:solid 1px #232323; width:80%; 
           max-width:700px; margin:10px auto; padding:15px;",
           div(style = "text-align:center;", h3("Running")),
           fluidRow(
-            column(width = 6, p(id = "input_text", "What's your aim?")),
-            column(width = 6, checkboxGroupInput("runner_aim", NULL,
+            column(width = 4, p(id = "input_text", "What's your aim?")),
+            column(width = 8, checkboxGroupInput("runner_aim", NULL,
                                                  choices  = runner_aims))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "How long have you been running?")),
-            column(width = 6, radioButtons("runner_experience", NULL,
+            column(width = 4, p(id = "input_text", "How long have you been running?")),
+            column(width = 8, radioButtons("runner_experience", NULL,
                                            choices  = runner_experiences, 
                                            selected = runner_experiences[6]))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "How many runs (sessions) do you do per week?")),
-            column(width = 6, numericInput("runner_runs_per_week", NULL, 
+            column(width = 4, p(id = "input_text", "How many runs (sessions) do you do per week?")),
+            column(width = 8, numericInput("runner_runs_per_week", NULL, 
                                            min = 0, value = 3, step = 1))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "What is the average weekly distance (in km) that you run?")),
-            column(width = 6, numericInput("runner_average_weekly_distance", NULL, 
+            column(width = 4, p(id = "input_text", "What is the average weekly distance (in km) that you run?")),
+            column(width = 8, numericInput("runner_average_weekly_distance", NULL, 
                                            min = 0, value = 25, step = 1))
           ),
           fluidRow(
-            column(width = 6, p(id = "input_text", "What types of training do you do?")),
-            column(width = 6, checkboxGroupInput("runner_type_of_training", NULL, 
+            column(width = 4, p(id = "input_text", "What types of training do you do?")),
+            column(width = 8, checkboxGroupInput("runner_type_of_training", NULL, 
                                                  choices  = runner_types_of_training))
-          )
+          ),
+          div(style = "text-align:center;color:#771111;", textOutput("error_running_msg"))
         ),
         div(
           style = "background-color:white; border:solid 1px #232323; width:80%; 
           max-width:700px; margin:10px auto; padding:15px;",
           div(style = "text-align:center;", h3("Other training")),
           fluidRow(
-            column(width = 6, 
+            column(width = 4, 
                    p(id = "input_text", "How often per week do you do strength training (gym) ?")),
-            column(width = 6, numericInput("training_gym_x", NULL, 
-                                           value = 1, min = 0, step = 1))
+            column(width = 8, numericInput("training_gym", NULL, 
+                                           value = 0, min = 0, step = 1))
           ),
           fluidRow(
-            column(width = 6, 
+            column(width = 4, 
                    p(id = "input_text", "How often per week do you do cross fit training?")),
-            column(width = 6, numericInput("training_crossfit_x", NULL, 
-                                           value = 1, min = 0, step = 1))
+            column(width = 8, numericInput("training_crossfit", NULL, 
+                                           value = 0, min = 0, step = 1))
           ),
           fluidRow(
-            column(width = 6, 
+            column(width = 4, 
                    p(id = "input_text", "How many minutes do you stretch before every run?")),
-            column(width = 6, numericInput("training_stretch_before", NULL, 
+            column(width = 8, numericInput("training_stretch_before", NULL, 
                                            value = 0, min = 0, step = 1))
           ),
           fluidRow(
-            column(width = 6, 
+            column(width = 4, 
                    p(id = "input_text", "How many minutes do you stretch after every run?")),
-            column(width = 6, numericInput("training_stretch_after", NULL, 
+            column(width = 8, numericInput("training_stretch_after", NULL, 
                                            value = 0, min = 0, step = 1))
-          )
+          ),
+          div(style = "text-align:center;color:#771111;", textOutput("error_other_msg"))
         ),
         div(
           style = "background-color:white; border:solid 1px #232323; width:80%; 
@@ -307,6 +341,7 @@ shinyServer(function(input, output, session) {
                        selected = character(0)),
           p("If you didn't actually fill the form we'd like to know it such that 
             we know to ignore the data in your analysis"),
+          div(style = "text-align:center;color:#771111;", textOutput("error_actionbutton_msg")),
           withBusyIndicatorUI(
             actionButton("create_account_button", "Create Account",
                          style = "color: #232323; background-color: #65ff00; border-color: #434343;"))
@@ -317,21 +352,7 @@ shinyServer(function(input, output, session) {
     ui
   }) 
   
-  # Update when radiobutton is clicked
-  observeEvent(input$input_form_correct, {
-    rv_create_account$fill_form <- input$input_form_correct
-  })
-  
-  # Disable add account button
-  observe({
-    if(!is.null(input$create_account_name)) {
-      if(is.null(rv_create_account$fill_form)){
-        disable("create_account_button")
-      } else {
-        enable("create_account_button")
-      }
-    }
-  })
+  # CREATE ACCOUNT: INJURY UI -----
   
   # Render the injuries part seperate to add more injuries
   output$add_injuries_ui <- renderUI({
@@ -373,7 +394,7 @@ shinyServer(function(input, output, session) {
                    )
                  })
           } else {
-            div(style = "color:red;", p("You haven't added any injuries."))
+            div(style = "color:#111177;", p("You haven't added any injuries."))
           }
       )
     )
@@ -391,6 +412,90 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  # CREATE ACCOUNT: ERROR MESSAGES -----
+  
+  # Check if inputs are valid and create error message if necessary
+  output$error_account_msg <- renderText({
+    text <- NULL
+    if(input$create_account_name == "") {
+      text <- paste(text, "Please enter a user name", sep = " - ")
+    } else {
+      if(input$create_account_password1 == "") {
+        text <- paste(text, "Please enter a password", sep = " - ")
+      }
+    }
+    if(input$create_account_name %in% c(rv_db$user$name, rv_db$user$email)) {
+      text <- paste(text, "User name is already taken, please enter another one", sep = " - ")
+    }
+    if(input$create_account_email != "" & !isValidEmail(input$create_account_email)) {
+      text <- paste(text, "Invalid email address", sep = " - ")
+    }
+    if(input$create_account_email %in% c(rv_db$user$email)) {
+      text <- paste(text, "Email address already in use", sep = " - ")
+    }
+    if(input$create_account_password1 != input$create_account_password2) {
+      text <- paste(text, "Passwords not equal", sep = " - ")
+    }
+    if(!is.null(text)) text <- str_sub(text, 4, -1)
+    rv_create_account$error_account <- text
+    text
+  })
+  
+  # Check if inputs are valid and create error message if necessary
+  output$error_general_msg <- renderText({
+    text <- NULL
+    if(!is.numeric(input$runner_height)) {
+      text <- paste(text, "Make sure height is a number", sep = " - ")
+    }
+    if(!is.numeric(input$runner_weight)) {
+      text <- paste(text, "Make sure weight is a number", sep = " - ")
+    }
+    rv_create_account$error_general <- text
+    text
+  })
+  
+  # Check if inputs are valid and create error message if necessary
+  output$error_running_msg <- renderText({
+    text <- NULL
+    if(!is.numeric(input$runner_runs_per_week)) {
+      text <- paste(text, "Make sure runs per week is a number", sep = " - ")
+    }
+    if(!is.numeric(input$runner_average_weekly_distance)) {
+      text <- paste(text, "Make sure average weekly distance is a number", sep = " - ")
+    }
+    rv_create_account$error_general <- text
+    text
+  })
+  
+  # Check if inputs are valid and create error message if necessary
+  output$error_other_msg <- renderText({
+    text <- NULL
+    if(!is.numeric(input$training_gym)) {
+      text <- paste(text, "Make sure the strength input is a number", sep = " - ")
+    }
+    if(!is.numeric(input$training_crossfit)) {
+      text <- paste(text, "Make sure the crossfit nput is a number", sep = " - ")
+    }
+    if(!is.numeric(input$training_stretch_before) | !is.numeric(input$training_stretch_after)) {
+      text <- paste(text, "Make sure stretches inputs are numbers", sep = " - ")
+    }
+    rv_create_account$error_general <- text
+    text
+  })
+
+  # Check if inputs are valid and create error message if necessary
+  output$error_actionbutton_msg <- renderText({
+    if(!is.null(rv_create_account$error_account) | 
+       !is.null(rv_create_account$error_general) | 
+       !is.null(rv_create_account$error_running) | 
+       !is.null(rv_create_account$error_other)){
+      "Please see fix any (error) message above."
+    } else {
+      NULL
+    }
+  })
+  
+  # CREATE ACCOUNT: CREATE THE ACCOUNT -----
   
   observeEvent(input$create_account_button, {
     
@@ -444,7 +549,7 @@ shinyServer(function(input, output, session) {
     )
     
     rv_db$user <- bind_rows(rv_db$user, new_user)
-    
+
     # Add new user info to user info database
     new_user_info <- tibble(
       user_id                        = new_user$user_id,
@@ -454,13 +559,13 @@ shinyServer(function(input, output, session) {
       runner_weight                  = as.numeric(input$runner_weight),
       runner_bmi                     = runner_weight / (runner_height / 100)^2,
       runner_sex                     = as.character(input$runner_sex),
-      # injuries
-      injuries_ankle                 = types_of_injuries[1] %in% input$type_of_injuries,
-      injuries_knee                  = types_of_injuries[2] %in% input$type_of_injuries,
-      # influence_of_injuries
-      deal_with_injuries_pain_run    = influences_of_injuries[1] %in% input$influence_of_injuries,
-      deal_with_injuries_stop_run    = influences_of_injuries[2] %in% input$influence_of_injuries,
-      deal_with_injuries_long_break  = influences_of_injuries[3] %in% input$influence_of_injuries,
+      # # injuries
+      # injuries_ankle                 = types_of_injuries[1] %in% input$type_of_injuries,
+      # injuries_knee                  = types_of_injuries[2] %in% input$type_of_injuries,
+      # # influence_of_injuries
+      # deal_with_injuries_pain_run    = influences_of_injuries[1] %in% input$influence_of_injuries,
+      # deal_with_injuries_stop_run    = influences_of_injuries[2] %in% input$influence_of_injuries,
+      # deal_with_injuries_long_break  = influences_of_injuries[3] %in% input$influence_of_injuries,
       # aim
       aim_joy                        = runner_aims[1] %in% input$runner_aim,
       aim_health                     = runner_aims[2] %in% input$runner_aim,
@@ -474,11 +579,28 @@ shinyServer(function(input, output, session) {
       training_type_home_jog         = runner_types_of_training[1] %in% input$runner_type_of_training,
       training_type_interval_sprint  = runner_types_of_training[2] %in% input$runner_type_of_training,
       training_type_treadmill        = runner_types_of_training[3] %in% input$runner_type_of_training,
+      # Other training
+      training_gym                   = input$training_gym,
+      training_crossfit              = input$training_crossfit,
+      training_stretch_before        = input$training_stretch_before,
+      training_stretch_after         = input$training_stretch_after,
       # filled out correctly
-      input_form_correct             = !input$input_form_correct
+      input_form_correct             = if_else(input$input_form_correct == "FALSE", FALSE, TRUE)
     )
     
     rv_db$user_info <- bind_rows(rv_db$user_info, new_user_info)
+
+    # Add injuries to injury database
+    if(!is.null(rv_create_account$injuries)) {
+      new_injury <- tibble(
+        user_id  = new_user$user_id,
+        name     = rv_create_account$injuries$name,
+        run_type = rv_create_account$injuries$run_type,
+        affect   = rv_create_account$injuries$affect
+      )
+      
+      rv_db$injury <- bind_rows(rv_db$injury, new_injury)
+    }
     
     # Write the database
     source("R/write_data_reactive.R", local = TRUE)
@@ -959,7 +1081,7 @@ shinyServer(function(input, output, session) {
         actionButton("next_frame", "Save and Next Frame", 
                      style = "color: #232323; background-color: #65ff00; border-color: #434343; ")
       } else {
-        actionButton("next_frame", "Continue", 
+        actionButton("next_frame", "Save and Continue to Report", 
                      style = "color: #232323; background-color: #65ff00; border-color: #434343; ")
       }
     } else { NULL }
@@ -972,6 +1094,8 @@ shinyServer(function(input, output, session) {
     row_data[c(1, 5)] <- c(input$left_air_ground, input$right_air_ground)
     if(input$left_air_ground == "Air") {
       row_data[2:4] <- NA_character_
+      reset("left_ground_pos") # Reset such that after air in front is default
+      reset("left_ground_land") # Reset such that after air landing is default
     } else {
       row_data[2:3] <- c(input$left_ground_pos, input$left_ground_land)
       if(input$left_ground_land == "Landing") {
@@ -982,6 +1106,8 @@ shinyServer(function(input, output, session) {
     } 
     if(input$right_air_ground == "Air") {
       row_data[6:8] <- NA_character_
+      reset("right_ground_pos") # Reset such that after air in front is default
+      reset("right_ground_land") # Reset such that after air landing is default
     } else {
       row_data[6:7] <- c(input$right_ground_pos, input$right_ground_land)
       if(input$right_ground_land == "Landing") {

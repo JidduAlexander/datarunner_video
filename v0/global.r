@@ -20,12 +20,14 @@ source("R/functions.R")
 
 db_user         <- readRDS("input/db/db_user.Rds")
 db_user_info    <- readRDS("input/db/db_user_info.Rds")
+db_injury       <- readRDS("input/db/db_injury.Rds")
 db_frame        <- readRDS("input/db/db_frame.Rds")
 db_frame_upload <- readRDS("input/db/db_frame_upload.Rds")
 
 # Get the modification times
 db_user_mtime          <- file.mtime("input/db/db_user.Rds")
 db_user_info_mtime     <- file.mtime("input/db/db_user_info.Rds")
+db_injury_mtime        <- file.mtime("input/db/db_injury.Rds")
 db_frame_mtime         <- file.mtime("input/db/db_frame.Rds")
 db_frame_upload_mtime  <- file.mtime("input/db/db_frame_upload.Rds")
 

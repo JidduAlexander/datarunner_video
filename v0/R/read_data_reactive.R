@@ -13,6 +13,12 @@ if(rv_db$user_info_mtime != file.mtime("input/db/db_user_info.Rds")) {
   rv_db$user_info_mtime  <- file.mtime("input/db/db_user_info.Rds")
 }
 
+# Injuries
+if(rv_db$injury_mtime != file.mtime("input/db/db_injury.Rds")) {
+  rv_db$injury        <- readRDS("input/db/db_injury.Rds")
+  rv_db$injury_mtime  <- file.mtime("input/db/db_injury.Rds")
+}
+
 # Frame
 if(rv_db$frame_mtime != file.mtime("input/db/db_frame.Rds")) {
   rv_db$frame        <- readRDS("input/db/db_frame.Rds")

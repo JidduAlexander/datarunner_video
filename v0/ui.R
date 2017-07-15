@@ -227,7 +227,7 @@ shinyUI(dashboardPage(
                         width = 4, 
                         radioButtons("left_ground_land", NULL, 
                                      choices = c("Flat", "Landing", "Taking off"),
-                                     selected = "Flat"))
+                                     selected = "Landing"))
                     ),
                     conditionalPanel(
                       "input.left_ground_land == 'Landing'",
