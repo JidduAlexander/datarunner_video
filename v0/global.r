@@ -91,6 +91,9 @@ runner_types_of_training <- c("Just leave my house and jog",
 
 run_distances <- c("Up to 200m", "A 400m sprint", "About 1km", "3 to 5km", "5 to 12km", "12 to 30km", "Marathon distance", "50km+")
 
+# sprint_distances <- run_distances[1:3]
+# jog_distances    <- run_distances[4:length(run_distances)]
+
 run_distances_palette <-  brewer.pal(8, "Dark2")
 names(run_distances_palette) <- run_distances
 

@@ -25,6 +25,39 @@ shinyServer(function(input, output, session) {
   # # Write the database
   # source("R/write_data_reactive.R", local = TRUE)
   
+  # MENUS -----
+  
+  # main menu
+  output$menu_main <- renderMenu({
+    if(is.null(rv_user$user_id)) {
+      sidebarMenu(
+        id = "tab_main", 
+        menuItem("Main",
+                 menuSubItem("Home", tabName = "home"),
+                 menuSubItem("Create Account", tabName = "create_account"))
+      )
+    } else { 
+      sidebarMenu(
+        id = "tab_main", 
+        menuItem("Main",
+                 menuSubItem("Home", tabName = "home"))
+      )
+    }
+  })
+  
+  # profile menu
+  output$menu_profile <- renderMenu({
+    if(!is.null(rv_user$user_id)) {
+      sidebarMenu(
+        id = "tab_profile", 
+        menuItem("Profile",
+                 menuSubItem("Board", tabName = "profile_general"),
+                 menuSubItem("Add New Video Analysis", tabName = "profile_video_analysis"),
+                 menuSubItem("Load External Data", tabName = "load_external_data"))
+      )
+    } else { NULL }
+  })
+  
   # USER -----
   
   # User - like cookies
@@ -86,13 +119,13 @@ shinyServer(function(input, output, session) {
     withBusyIndicatorServer("user_login", {
       
       user_ <- rv_db$user %>% 
-        filter(name == input$user_name)
+        filter(user_name == input$user_name)
       if(nrow(user_) == 1) {
         # If the password is correct then login
         if(paste(as.character(hash(charToRaw(input$user_pw))), collapse = "") == user_$pw_hash) {
           # Set reactive values of currently logged in person
           rv_user$user_id   <- user_$user_id
-          rv_user$user_name <- user_$name
+          rv_user$user_name <- user_$user_name
           
           updateTabItems(session, "tab_profile", "profile_general")
           
@@ -118,6 +151,8 @@ shinyServer(function(input, output, session) {
       rv_user$user_name <- NULL
       
       Sys.sleep(0.5)
+      
+      updateTabItems(session, "tab_main", "home")
     })
   })
   
@@ -162,12 +197,14 @@ shinyServer(function(input, output, session) {
   
   # Store injuries if more are created
   rv_create_account <- reactiveValues(
-    injuries      = NULL,
-    fill_form     = NULL, # support for actionbutton disable
-    error_account = NULL, # support for actionbutton disable
-    error_general = NULL, # support for actionbutton disable
-    error_running = NULL, # support for actionbutton disable
-    error_other   = NULL  # support for actionbutton disable
+    injuries       = NULL,
+    injuries_ui    = NULL, # For ui feedback a slightly different format
+    injury_add_msg = NULL, 
+    fill_form      = NULL, # support for actionbutton disable
+    error_account  = NULL, # support for actionbutton disable
+    error_general  = NULL, # support for actionbutton disable
+    error_running  = NULL, # support for actionbutton disable
+    error_other    = NULL  # support for actionbutton disable
   )
   
   # CREATE ACCOUNT: DISABLE ACTION BUTTON -----
@@ -334,7 +371,7 @@ shinyServer(function(input, output, session) {
         div(
           style = "background-color:white; border:solid 1px #232323; width:80%; 
           max-width:700px; margin:20px auto; padding:15px; text-align:center;",
-          div(style = "font-weight:bold;", p("Did you fill the complete form?")),
+          div(style = "font-weight:bold;", p("* Did you fill the complete form?")),
           radioButtons("input_form_correct", NULL, 
                        inline   = TRUE,
                        choices  = c("Yes" = TRUE, "No" = FALSE),
@@ -362,12 +399,16 @@ shinyServer(function(input, output, session) {
       div(
         style = "border:solid 1px grey; margin: 3px; padding: 5px; background-color:#e4f8ff;",
         fluidRow(
-          column(width = 4, selectInput("injury_name", "Injury", 
+          column(width = 3, selectInput("injury_name", "Injury", 
                                         choices  = injury_name,
                                         selected = injury_name[1])),
-          column(width = 2, selectInput("injury_run_type", "Comes up in", 
-                                        choices  = c("Both", "Sprint", "Jog"), 
-                                        selected = "Both")),
+          column(width = 3, 
+                 selectInput("injury_distance", "At distances", 
+                                        choices  = c("All", run_distances), 
+                                        selected = "All",
+                                        multiple = TRUE),
+                 div(style = "color:#771111;", textOutput("injury_distance_msg"))
+          ),
           column(width = 6, selectInput("injury_affect", "How does it affect you?",
                                         choices  = influences_of_injuries,
                                         selected = influences_of_injuries[1]))
@@ -378,38 +419,71 @@ shinyServer(function(input, output, session) {
       div(style = "text-align:center;", 
           h4("Your injuries:"),
           fluidRow(
-            column(width = 4, p(style = "font-weight:bold;", "Injury")),
-            column(width = 2, p(style = "font-weight:bold;", "During")),
+            column(width = 3, p(style = "font-weight:bold;", "Injury")),
+            column(width = 3, p(style = "font-weight:bold;", "During")),
             column(width = 6, p(style = "font-weight:bold;", "Affect"))
           ),
-          if(!is.null(rv_create_account$injuries)) {
-            pmap(list(rv_create_account$injuries$name,
-                      rv_create_account$injuries$run_type,
-                      rv_create_account$injuries$affect),
+          if(!is.null(rv_create_account$injuries_ui)) {
+            pmap(list(rv_create_account$injuries_ui$injury,
+                      rv_create_account$injuries_ui$distance,
+                      rv_create_account$injuries_ui$affect),
                  function(x, y, z) {
                    fluidRow(
-                     column(width = 4, p(paste0(x))),
-                     column(width = 2, p(paste0(y))),
+                     column(width = 3, p(paste0(x))),
+                     column(width = 3, p(paste0(y))),
                      column(width = 6, p(paste0(z)))
                    )
                  })
           } else {
-            div(style = "color:#111177;", p("You haven't added any injuries."))
+            div(style = "color:#111155;", p("You haven't added any injuries."))
           }
       )
     )
   })
   
+  # Remove message when distances have been selected
+  observeEvent(input$injury_distance, {
+    if(!is.null(input$injury_distance)) {
+      rv_create_account$injury_add_msg <- NULL
+    } 
+  })
+  # Return the message
+  output$injury_distance_msg <- renderText({
+    rv_create_account$injury_add_msg
+  })
+  
   # Action button add injury response
   observeEvent(input$injury_add_more, {
-    rv_create_account$injuries <- bind_rows(
-      rv_create_account$injuries,
-      tibble(
-        name     = input$injury_name,
-        run_type = input$injury_run_type,
-        affect   = input$injury_affect
+    
+    if(is.null(input$injury_distance)) {
+      # Set message and ignore button otherwise
+      rv_create_account$injury_add_msg <- "Please set a distance."
+    } else { 
+      # For database store All as each individual distances
+      if("All" %in% input$injury_distance) {
+        dist <- run_distances
+      } else {
+        dist <- input$injury_distance
+      }
+      rv_create_account$injuries <- bind_rows(
+        rv_create_account$injuries,
+        tibble(
+          injury   = input$injury_name,
+          distance = dist,
+          affect   = input$injury_affect
+        )
       )
-    )
+      
+      # For UI keep All instead of each distance individually
+      rv_create_account$injuries_ui <- bind_rows(
+        rv_create_account$injuries_ui,
+        tibble(
+          injury   = input$injury_name,
+          distance = input$injury_distance,
+          affect   = input$injury_affect
+        )
+      )
+    }
   })
   
   # CREATE ACCOUNT: ERROR MESSAGES -----
@@ -423,14 +497,14 @@ shinyServer(function(input, output, session) {
       if(input$create_account_password1 == "") {
         text <- paste(text, "Please enter a password", sep = " - ")
       }
-    }
-    if(input$create_account_name %in% c(rv_db$user$name, rv_db$user$email)) {
-      text <- paste(text, "User name is already taken, please enter another one", sep = " - ")
+      if(input$create_account_name %in% c(rv_db$user$user_name, rv_db$user$email)) {
+        text <- paste(text, "User name is already taken, please enter another one", sep = " - ")
+      }
     }
     if(input$create_account_email != "" & !isValidEmail(input$create_account_email)) {
       text <- paste(text, "Invalid email address", sep = " - ")
     }
-    if(input$create_account_email %in% c(rv_db$user$email)) {
+    if(input$create_account_email != "" & input$create_account_email %in% c(rv_db$user$email)) {
       text <- paste(text, "Email address already in use", sep = " - ")
     }
     if(input$create_account_password1 != input$create_account_password2) {
@@ -509,7 +583,7 @@ shinyServer(function(input, output, session) {
     )
     # Check if account name is unique
     validate(
-      need(!(input$create_account_name %in% c(rv_db$user$name, rv_db$user$email)), 
+      need(!(input$create_account_name %in% c(rv_db$user$user_name, rv_db$user$email)), 
            "User name is already taken, please enter another one.")
     )
     # If email is filled in, check if email address is valid
@@ -538,7 +612,7 @@ shinyServer(function(input, output, session) {
     # Add new user to user database
     new_user <- tibble(
       user_id     = max(rv_db$user$user_id) + 1,
-      name        = input$create_account_name,
+      user_name   = input$create_account_name,
       email       = input$create_account_email,
       pw_hash     = input$create_account_password1 %>% 
         charToRaw() %>% 
@@ -553,7 +627,7 @@ shinyServer(function(input, output, session) {
     # Add new user info to user info database
     new_user_info <- tibble(
       user_id                        = new_user$user_id,
-      name                           = new_user$name,
+      user_name                      = new_user$user_name,
       runner_yob                     = as.numeric(input$runner_yob),
       runner_height                  = as.numeric(input$runner_height),
       runner_weight                  = as.numeric(input$runner_weight),
@@ -594,8 +668,8 @@ shinyServer(function(input, output, session) {
     if(!is.null(rv_create_account$injuries)) {
       new_injury <- tibble(
         user_id  = new_user$user_id,
-        name     = rv_create_account$injuries$name,
-        run_type = rv_create_account$injuries$run_type,
+        injury   = rv_create_account$injuries$injury,
+        distance = rv_create_account$injuries$distance,
         affect   = rv_create_account$injuries$affect
       )
       
@@ -610,7 +684,7 @@ shinyServer(function(input, output, session) {
     
     # Login
     rv_user$user_id   <- new_user$user_id
-    rv_user$user_name <- new_user$name
+    rv_user$user_name <- new_user$user_name
     
     # Go to page 2
     updateTabItems(session, "tab_profile", "profile_general")
@@ -625,7 +699,7 @@ shinyServer(function(input, output, session) {
       ui <- list(
         div(
           style = "text-align:center; width:70%; margin: 0 auto;",
-          h3("Would you like to do something data-like?"),
+          h3("Ready to get data-nerdy?"),
           p("With the video analysis you can compare your running style to everybody else's. This 
           is about building a large database of running styles and how they are related to 
           performance and injury."),
@@ -684,39 +758,6 @@ shinyServer(function(input, output, session) {
     }
     
     ui
-  })
-  
-  # MENUS -----
-  
-  # main menu
-  output$menu_main <- renderMenu({
-    if(is.null(rv_user$user_id)) {
-      sidebarMenu(
-        id = "tab_main", 
-        menuItem("Main",
-                 menuSubItem("Home", tabName = "home"),
-                 menuSubItem("Create Account", tabName = "create_account"))
-      )
-    } else { 
-      sidebarMenu(
-        id = "tab_main", 
-        menuItem("Main",
-                 menuSubItem("Home", tabName = "home"))
-      )
-    }
-  })
-  
-  # profile menu
-  output$menu_profile <- renderMenu({
-    if(!is.null(rv_user$user_id)) {
-      sidebarMenu(
-        id = "tab_profile", 
-        menuItem("Profile",
-                 menuSubItem("Board", tabName = "profile_general"),
-                 menuSubItem("Add New Video Analysis", tabName = "profile_video_analysis"),
-                 menuSubItem("Load External Data", tabName = "load_external_data"))
-      )
-    } else { NULL }
   })
   
   # NEW VIDEO ANALYSIS (NVA) -----
@@ -1094,24 +1135,26 @@ shinyServer(function(input, output, session) {
     row_data[c(1, 5)] <- c(input$left_air_ground, input$right_air_ground)
     if(input$left_air_ground == "Air") {
       row_data[2:4] <- NA_character_
-      reset("left_ground_pos") # Reset such that after air in front is default
-      reset("left_ground_land") # Reset such that after air landing is default
+      updateRadioButtons(session, "left_ground_pos", value = "In front") # After air in front is default
+      updateRadioButtons(session, "left_ground_land", value = "Landing") # After air landing is default
     } else {
       row_data[2:3] <- c(input$left_ground_pos, input$left_ground_land)
       if(input$left_ground_land == "Landing") {
         row_data[4] <- input$left_ground_land_detail
+        updateRadioButtons(session, "left_ground_land_detail", value = "Flat") # After landing set to flat automatically
       } else {
         row_data[4] <- NA_character_
       }
     } 
     if(input$right_air_ground == "Air") {
       row_data[6:8] <- NA_character_
-      reset("right_ground_pos") # Reset such that after air in front is default
-      reset("right_ground_land") # Reset such that after air landing is default
+      updateRadioButtons(session, "right_ground_pos", value = "In front") # After air in front is default
+      updateRadioButtons(session, "right_ground_land", value = "Landing") # After air landing is default
     } else {
       row_data[6:7] <- c(input$right_ground_pos, input$right_ground_land)
       if(input$right_ground_land == "Landing") {
         row_data[8] <- input$right_ground_land_detail
+        updateRadioButtons(session, "right_ground_land_detail", value = "Flat") # After landing set to flat automatically
       } else {
         row_data[8] <- NA_character_
       }
@@ -1189,8 +1232,6 @@ shinyServer(function(input, output, session) {
           step_length  = (1000 * rv_nva$run_pace_km_hr / 60) / step_rate
         ) %>% 
         select(-num_frames)
-      
-      x <- 5
       
       rv_db$frame_upload[rv_db$frame_upload$frame_upload_id == rv_frame$frame_upload_id, 
                   c("distance", 
@@ -1398,30 +1439,29 @@ shinyServer(function(input, output, session) {
     if(!is.null(rv_nva$report_toggle)) {
       # Step length versus BMI (body weight / height^2) coloured by injury
       plot_data <- left_join(
-        select(rv_db$frame_upload, frame_upload_id, user_id, `Step Rate` = step_rate),
-        select(rv_db$user_info, user_id, BMI = runner_bmi, starts_with("injuries")),
+        select(rv_db$frame_upload, frame_upload_id, user_id, `Step Rate` = step_rate, distance),
+        select(rv_db$user_info, user_id, BMI = runner_bmi),
         by = "user_id"
-      ) 
-      inj_names <- names(plot_data[-1:-4])
-      plot_data[-1:-4] <- map2(plot_data[-1:-4], str_sub(inj_names, 10, -1),
-                               function(col, name) {
-                                 if_else(col, name, "")
-                               })
-      plot_data <- plot_data %>% 
-        unite_(inj_names, col = "Injury", sep = " & ") %>% 
-        mutate(Injury = factor(if_else(Injury == " & ", "None", Injury))) %>% 
-        na.omit
+      )
       
-      ggplot(plot_data, aes(x = `Step Rate`, y = BMI, col = Injury)) +
+      # Add 'none' injury to user_id's without injury or user without injuries for both run types.
+      plot_data <- left_join(
+        plot_data,
+        rv_db$injury,
+        by = c("user_id", "distance"))
+      
+      plot_data$injury[is.na(plot_data$injury)] <- "None"
+      plot_data$affect[is.na(plot_data$affect)] <- NA_character_
+      plot_data$distance[is.na(plot_data$distance)] <- NA_character_
+      
+      ggplot(plot_data, aes(x = `Step Rate`, y = BMI, col = injury)) +
         geom_point(alpha = 0.7) + 
-        # labs(y = expression(BMI  - (kg/m[2]))) +
         ylab(bquote('BMI (kg/m ' ^2~')')) + 
         theme_bw() + 
         scale_colour_brewer(palette = "Dark2") + 
-        geom_point(data = plot_data[plot_data$frame_upload_id == 2, ], #rv_frame$frame_upload_id, ], 
+        geom_point(data = plot_data[plot_data$frame_upload_id == rv_frame$frame_upload_id, ], 
                    aes(x = `Step Rate`, y = BMI, col = "Your run"),
                    size = 2, alpha = 0.9)
-      
     } else { NULL }
   })
   
