@@ -9,6 +9,7 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     sidebarMenuOutput("menu_main"),
     sidebarMenuOutput("menu_profile"),
+    sidebarMenuOutput("menu_new_analysis"),
     uiOutput("login_ui"),
     uiOutput("logout_ui")
   ),
@@ -36,11 +37,59 @@ shinyUI(dashboardPage(
         uiOutput("home_ui")
       ),
       tabItem(
+        tabName = "interactive_plot",
+        div(
+          style = "width:70%; max-width:600px; margin: 0 auto; text-align:center;",
+          h3("The Interactive Plotting Environment"),
+          p("Welcome to the fun place! Here you can put together your own visual creations."),
+          uiOutput("interactive_plot_ui")
+        )
+      ),
+      tabItem(
         tabName = "create_account",
         uiOutput("create_account_ui")
       ),
-      tabItem(tabName = "profile_general",
-              uiOutput("profile_general_ui")
+      tabItem(
+        tabName = "profile_general",
+        uiOutput("profile_general_ui")
+      ),
+      tabItem(
+        tabName = "profile_report",
+        div(
+          style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
+          h3("The summary of your runs"),
+          p("An overview of your run in numbers."),
+          uiOutput("profile_report_ui"),
+          hr(style = "margin:40px 0px"),
+          h3("You with respect to the world"),
+          p("The following plots highlight your results with respect to everybody else."),
+          hr(style = "margin:40px 0px"),
+          h4("Pace (speed) versus Air time coloured by distance."),
+          p("Can you be fast if your feet are stuck to the ground? Do people who run fast 
+              (at their distance) spend a lot or a little time in the air? And you?"),
+          plotOutput("report_plot_1"),
+          hr(style = "margin:40px 0px"),
+          h4("Pace (speed) versus Step Rate coloured by distance."),
+          p("Is it faster to run many of few steps? And does that change between short and 
+              long distances? Do you run with a good step rate for your distance?"),
+          plotOutput("report_plot_2"),
+          hr(style = "margin:40px 0px"),
+          h4("Pace (speed) versus Behind ratio coloured by distance."),
+          p("You 'behind ratio) increases when you land your feet less far in front of you? 
+              Are you landing your feet too far or too close for a good speed?"),
+          plotOutput("report_plot_3"),
+          hr(style = "margin:40px 0px"),
+          h4("Behind ratio versus step rate coloured by distance."),
+          p("Does the behind ratio increase with increased step rate? In that case would 
+              increasing your step rate increase your behind ratio"),
+          plotOutput("report_plot_4"),
+          hr(style = "margin:40px 0px"),
+          h4("Step length versus BMI (body weight / height^2) coloured by injury."),
+          p("Do high BMI and low step rate increase the changes of injury? Can you change 
+              your step rate to decreases the changes of getting an injury at your BMI?"),
+          plotOutput("report_plot_5"),
+          div(style = "height:200px;")
+        )
       ),
       # Add New Video Analysis -----
       tabItem(
@@ -131,16 +180,19 @@ shinyUI(dashboardPage(
               style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
               # PICK START AND END FRAME -----
               h3("Pick start and end frame for the analysis"),
+              div(style = "text-align:center;color:#771111;", 
+                  p("Please take care to understand this part correctly. Wrong frame selection will 
+                    result in error in the analysis. Please see below for the explanation by example.")),
               fluidRow(
                 column(width = 4, 
                        p(id = "input_text", 
-                         "Start frame (Look for the first frame where your back foot has lift of the ground)")),
+                         "Start frame (Find the first frame where your back foot has just lift of the ground)")),
                 column(width = 8, uiOutput("video_frame_start_ui"))
               ),
               fluidRow(
                 column(width = 4, 
                        p(id = "input_text", 
-                         "End frame (Look for the last frame where your back foot is till on the ground)")),
+                         "End frame (Look for the last frame where your back foot is till touching the ground)")),
                 column(width = 8, uiOutput("video_frame_end_ui"))
               ),
               withBusyIndicatorUI(
@@ -442,45 +494,6 @@ shinyUI(dashboardPage(
                        The next frame is like frame 28, but with the feet switched.")
               ),
               column(width = 2)
-            )
-          ),
-          tabPanel(
-            # REPORT -----
-            title = "Report",
-            value = "report",
-            div(
-              style = "text-align:center; width:70%; max-width:600px; margin: 0 auto;",
-              h3("The summary of your run"),
-              p("An overview of your run in numbers."),
-              uiOutput("report_step_ui"),
-              hr(style = "margin:40px 0px"),
-              h3("You with respect to the world"),
-              p("The following plots highlight your results with respect to everybody else."),
-              hr(style = "margin:40px 0px"),
-              h4("Pace (speed) versus Air time coloured by distance."),
-              p("Can you be fast if your feet are stuck to the ground? Do people who run fast 
-                (at their distance) spend a lot or a little time in the air? And you?"),
-              plotOutput("report_plot_1"),
-              hr(style = "margin:40px 0px"),
-              h4("Pace (speed) versus Step Rate coloured by distance."),
-              p("Is it faster to run many of few steps? And does that change between short and 
-                long distances? Do you run with a good step rate for your distance?"),
-              plotOutput("report_plot_2"),
-              hr(style = "margin:40px 0px"),
-              h4("Pace (speed) versus Behind ratio coloured by distance."),
-              p("You 'behind ratio) increases when you land your feet less far in front of you? 
-                Are you landing your feet too far or too close for a good speed?"),
-              plotOutput("report_plot_3"),
-              hr(style = "margin:40px 0px"),
-              h4("Behind ratio versus step rate coloured by distance."),
-              p("Does the behind ratio increase with increased step rate? In that case would 
-                increasing your step rate increase your behind ratio"),
-              plotOutput("report_plot_4"),
-              hr(style = "margin:40px 0px"),
-              h4("Step length versus BMI (body weight / height^2) coloured by injury."),
-              p("Do high BMI and low step rate increase the changes of injury? Can you change 
-                your step rate to decreases the changes of getting an injury at your BMI?"),
-              plotOutput("report_plot_5")
             )
           )
         ),
